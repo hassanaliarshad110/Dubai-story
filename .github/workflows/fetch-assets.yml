@@ -21,6 +21,6 @@ jobs:
         run: |
           git config user.name "Hassan Ali"
           git config user.email "hassanaliarshad110@users.noreply.github.com"
-          git add -A data/veh data/models || true
+          git add -A data/veh data/models audio/radio || true
           git diff --cached --quiet || git commit -m "Add game models"
           git pull -q --rebase origin main && git push

@@ -87,12 +87,12 @@ export class Buses {
     return [...out.values()].sort((a, b) => (parseInt(a.p.route.r) || 999) - (parseInt(b.p.route.r) || 999));
   }
   fareFor() { const youth = this.g.story === 'natalia'; return { amt: youth ? FARE.youth : FARE.adult, kind: youth ? 'youth' : 'adult' }; }
-  // pay once; a fare is good for 90 minutes of transfers on buses and CTrains
+  // pay once; a fare is good for 90 minutes of transfers on ${(window.game && window.game.dubai) ? 'buses and the Metro' : 'buses and CTrains'}
   pay() {
     const now = Date.now(), M = this.g.missions;
     if (now < this.fareUntil) { this.ui.toast(tx('Your fare is still good: transfers are free for 90 minutes')); return; }
     const f = this.fareFor(); if (M && M.pay) M.pay(f.amt); this.fareUntil = now + 90 * 60 * 1000;
-    this.ui.toast(f.kind === 'youth' ? tx(`Paid the youth fare: $${f.amt.toFixed(2)} (good for 90 minutes)`) : tx(`Paid the adult fare: $${f.amt.toFixed(2)} (good for 90 minutes)`));
+    this.ui.toast(f.kind === 'youth' ? tx(`Paid the youth fare: ${(window.game && window.game.dubai) ? 'AED ' : '$'}${f.amt.toFixed(2)} (good for 90 minutes)`) : tx(`Paid the adult fare: ${(window.game && window.game.dubai) ? 'AED ' : '$'}${f.amt.toFixed(2)} (good for 90 minutes)`));
   }
   // ---------------------------------------------------------------- picker: which bus, then which stop
   open(stop) {
@@ -102,7 +102,7 @@ export class Buses {
     const panel = document.createElement('div');
     panel.style.cssText = 'background:#fbf8f1;color:#1b1f24;border-radius:16px;width:min(560px,92vw);max-height:80vh;overflow:auto;padding:16px 18px;font:15px system-ui,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.4)';
     const f = this.fareFor();
-    const head = `<div style="font-weight:800;font-size:18px">🚏 ${stop.name}</div><div style="opacity:.7;margin:2px 0 10px">${tx(`Fare $${f.amt.toFixed(2)}, good for 90 minutes on buses and CTrains`)}</div>`;
+    const head = `<div style="font-weight:800;font-size:18px">🚏 ${stop.name}</div><div style="opacity:.7;margin:2px 0 10px">${tx(`Fare ${(window.game && window.game.dubai) ? 'AED ' : '$'}${f.amt.toFixed(2)}, good for 90 minutes on ${(window.game && window.game.dubai) ? 'buses and the Metro' : 'buses and CTrains'}`)}</div>`;
     const list = () => {
       panel.innerHTML = head + `<div style="font-weight:700;margin-bottom:6px">${tx('Which bus?')}</div>`;
       for (const o of opts) {
@@ -212,7 +212,7 @@ export class Buses {
     const card = document.createElement('div'); card.id = 'dirs'; card.dir = rtl() ? 'rtl' : 'ltr';
     card.style.cssText = 'position:fixed;left:10px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:21;width:min(400px,72vw);max-height:46vh;overflow:auto;background:rgba(14,20,30,.92);color:#fff;border-radius:14px;padding:12px 14px;font:14px system-ui,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.4)';
     const f = this.fareFor();
-    if (plan.walk) card.innerHTML = `<b>🚶 ${tx(`Walk about ${mins(plan.time)} min`)}</b><div style="opacity:.75;margin-top:4px">${tx('No bus or CTrain is faster for this trip. Follow the purple line.')}</div>`;
+    if (plan.walk) card.innerHTML = `<b>🚶 ${tx(`Walk about ${mins(plan.time)} min`)}</b><div style="opacity:.75;margin-top:4px">${tx(game.dubai ? 'No bus or Metro is faster for this trip.' : 'No bus or CTrain is faster for this trip. Follow the purple line.')}</div>`;
     else {
       const rows = []; let n = 0;
       for (const [k, leg] of plan.legs.entries()) {
@@ -222,7 +222,7 @@ export class Buses {
         n = k;
       }
       rows.push(`🚶 ${tx(`Walk ${mins(plan.legs[n].w1 / WALK)} min to your destination`)}`);
-      card.innerHTML = `<b>${tx(`By transit: about ${mins(plan.time)} min`)}</b> <span style="opacity:.75">· ${tx(`fare $${f.amt.toFixed(2)}, transfers free for 90 minutes`)}</span><ol style="margin:8px 0 6px;padding-inline-start:20px;line-height:1.45">${rows.map(r => `<li style="margin:3px 0">${r}</li>`).join('')}</ol>`;
+      card.innerHTML = `<b>${tx(`By transit: about ${mins(plan.time)} min`)}</b> <span style="opacity:.75">· ${tx(`fare ${(window.game && window.game.dubai) ? 'AED ' : '$'}${f.amt.toFixed(2)}, transfers free for 90 minutes`)}</span><ol style="margin:8px 0 6px;padding-inline-start:20px;line-height:1.45">${rows.map(r => `<li style="margin:3px 0">${r}</li>`).join('')}</ol>`;
       const go = document.createElement('button'); go.textContent = tx('Guide me by transit'); go.style.cssText = 'border:0;border-radius:10px;padding:8px 14px;background:#ffc400;color:#111;font-weight:800;cursor:pointer;margin-inline-end:8px';
       go.onclick = () => { this.startGuide(plan, x, y); card.remove(); };
       card.appendChild(go);

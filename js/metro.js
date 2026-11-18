@@ -33,7 +33,7 @@ export class Metro {
     for (const L of this.lines) {
       let i = -1, bd = 60; L.stops.forEach((s, k) => { const d = Math.hypot(s.x - x, s.y - y); if (d < bd) { bd = d; i = k; } });
       if (i < 0 || i >= L.stops.length - 1) continue;
-      const route = L.p.route, colour = /red/i.test(route.n || '') ? '#c8102e' : /blue/i.test(route.n || '') ? '#1f5fa8' : '#555';
+      const route = L.p.route, colour = /red/i.test(route.n || '') ? '#c8102e' : /green/i.test(route.n || '') ? '#2e9d48' : /blue/i.test(route.n || '') ? '#1f5fa8' : '#555';
       out.push({ L, from: L.stops[i], ahead: L.stops.slice(i + 1), label: (route.n || 'CTrain').split(' - ')[0], toward: L.stops[L.stops.length - 1].name, colour });
     }
     return out;
@@ -45,7 +45,7 @@ export class Metro {
     box.style.cssText = 'position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:rgba(5,10,15,.6)';
     const panel = document.createElement('div');
     panel.style.cssText = 'background:#fbf8f1;color:#1b1f24;border-radius:16px;max-width:min(560px,92vw);max-height:80vh;overflow:auto;padding:16px 18px;font:15px system-ui,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.4)';
-    panel.innerHTML = `<div style="font-weight:800;font-size:19px;margin-bottom:2px">🚆 ${opts[0].from.name} station</div><div style="opacity:.7;margin-bottom:10px">Where to? Youth fare $2.65 · good for 90 minutes</div>`;
+    panel.innerHTML = `<div style="font-weight:800;font-size:19px;margin-bottom:2px">🚆 ${opts[0].from.name} station</div><div style="opacity:.7;margin-bottom:10px">Where to? ${(window.game && window.game.dubai) ? 'Fare AED 4.00' : 'Youth fare $2.65'} · good for 90 minutes</div>`;
     for (const o of opts) {
       const h = document.createElement('div'); h.style.cssText = `margin:10px 0 6px;font-weight:700;color:${o.colour}`; h.textContent = `${o.label} towards ${o.toward}`; panel.appendChild(h);
       const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px';

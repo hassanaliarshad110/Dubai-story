@@ -50,6 +50,8 @@ function openPhoneDubai() {
   show('Phone', `<div class="apps">
     <button class="app" data-app="goto"><i style="background:#2a6fdb">📍</i>Go to place</button>
     <button class="app" data-app="map"><i style="background:#7a3fa0">🗺️</i>Map</button>
+    <button class="app" data-app="biz"><i style="background:#b8432f">🛍️</i>Nearby</button>
+    <button class="app" data-app="metro"><i style="background:#d7262e">🚇</i>Metro &amp; bus</button>
     <button class="app" data-app="real"><i style="background:#0b7a75">📷</i>Real photos</button>
     <button class="app" data-app="settings"><i style="background:#555">⚙️</i>Settings</button></div>
     <p style="font-size:12px;color:#5b6573;margin-top:22px">In the real UAE: <b>999</b> police · <b>998</b> ambulance · <b>997</b> fire</p>`);
@@ -59,7 +61,18 @@ function openPhoneDubai() {
     if (a === 'settings') appSettings();
     if (a === 'real') appReal();
     if (a === 'goto') appGotoDubai();
+    if (a === 'biz') appBiz();
+    if (a === 'metro') appMetroDubai();
   });
+}
+function appMetroDubai() {
+  const p = game.player, near = game.world.stops.map(s => [Math.hypot(s[0] - p.x, s[1] - p.y), s]).sort((a, b) => a[0] - b[0]).slice(0, 6);
+  const lines = game.world.routes.filter(r => r.t === '1').map(r => r.n).filter((v, i, a) => a.indexOf(v) === i);
+  show('Metro & bus', `<div class="p-h">Nearest stops and stations</div><div class="p-list">${near.map(([d, s]) => `<button class="p-item" data-x="${s[0]}" data-y="${s[1]}"><b>${/Station$/.test(s[2]) ? '🚇' : '🚌'} ${esc(s[2])}</b><small>${Math.round(d)} m away · tap to set a waypoint</small></button>`).join('') || '<p>No stops nearby.</p>'}</div>
+    <div class="p-h">Metro lines</div><p style="font-size:13px">${lines.map(esc).join('<br>') || 'None in the built area yet.'}</p>
+    <p style="font-size:13px">At a Metro station platform, press E (✋) to ride. At a bus stop, press E to catch a bus.</p>
+    <p style="font-size:11px;color:#5b6573">Routes, stations and stops: OpenStreetMap contributors (ODbL). Timetables are not real.</p>`);
+  $('.phone-body').querySelectorAll('[data-x]').forEach(b => b.onclick = () => { game.setWaypoint(+b.dataset.x, +b.dataset.y); closePhone(); toast('Waypoint set'); });
 }
 // data/search.json (tools/build_dubai.py): [[name, x, y, kind, rx, ry, alt], ...] streets, buildings, places, areas, addresses
 let SEARCH = null;
@@ -261,7 +274,7 @@ function appBiz(cat = null, q = '') {
   show('Nearby', `<input id="biz-q" class="p-input" placeholder="Search a business by name" value="${esc(q)}" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccd;margin-bottom:8px">
     <div class="chips"><button class="chip${!cat && !q ? ' on' : ''}" data-c="">All</button>${Object.entries(BIZ_CAT).map(([k, v]) => `<button class="chip${cat === k ? ' on' : ''}" data-c="${k}">${v.icon} ${v.label}</button>`).join('')}</div>
     <div class="p-list">${list.length ? list.map(({ b, d }, i) => `<button class="p-item" data-i="${i}"><b>${BIZ_CAT[b.cat].icon} ${esc(b.name)}</b><br><small>${esc(b.addr)} · ${km(d)}</small></button>`).join('') : '<p>Nothing found close by.</p>'}</div>
-    <p style="font-size:11px;color:#5b6573">From the City of Calgary business licence list. Tap one to set a waypoint.</p>`);
+    <p style="font-size:11px;color:#5b6573">${game.dubai ? 'From OpenStreetMap' : 'From the City of Calgary business licence list'}. Tap one to set a waypoint.</p>`);
   const body = $('.phone-body');
   body.querySelectorAll('[data-c]').forEach(x => x.onclick = () => appBiz(x.dataset.c || null));
   const inp = body.querySelector('#biz-q'); inp.onkeydown = e => { if (e.key === 'Enter') appBiz(null, inp.value); }; inp.onchange = () => appBiz(null, inp.value);

@@ -12,7 +12,7 @@ phase built later joins its neighbours exactly where it does in the real city.
 Usage:  python tools/build_dubai.py [--out data] [--cache .cache]
 Needs:  shapely (pip install shapely). Runs where the internet is open (e.g. GitHub Actions).
 """
-import argparse, datetime, json, math, os, struct, sys, time, urllib.parse, urllib.request
+import argparse, datetime, json, math, os, re, struct, sys, time, urllib.parse, urllib.request
 from collections import defaultdict
 
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon, box
@@ -282,6 +282,14 @@ LANDMARKS = {
     'Dubai Frame': ['dubai frame'], 'Museum of the Future': ['museum of the future'], 'Burj Khalifa': ['burj khalifa'],
     'The Dubai Mall': ['the dubai mall', 'dubai mall'], 'Dubai Opera': ['dubai opera'],
     'Dubai World Trade Centre': ['world trade centre'], 'Emirates Towers': ['emirates tower'],
+    'Dubai Fountain': ['dubai fountain'], 'Address Downtown': ['address downtown'], 'Souk Al Bahar': ['souk al bahar'],
+    'Business Bay': ['bay square'], 'DIFC Gate Building': ['the gate', 'gate building'], 'Rose Tower': ['rose rayhaan', 'rose tower'],
+    'Zabeel Park': ['zabeel park'], 'Al Fahidi Historical Neighbourhood': ['al fahidi historical', 'bastakiya', 'al bastakiya'],
+    'Al Fahidi Fort (Dubai Museum)': ['al fahidi fort', 'dubai museum'], 'Gold Souk': ['gold souk'], 'Spice Souk': ['spice souk'],
+    'Dubai Creek Park': ['creek park'], 'Wafi City': ['wafi'], 'BurJuman': ['burjuman'], 'Al Ghurair Centre': ['al ghurair centre'],
+    'Dubai Healthcare City': ['healthcare city'], 'Al Seef': ['al seef'], 'Union Metro Station': ['union metro', 'union station'],
+    'Etisalat Tower (Deira)': ['etisalat tower', 'etisalat building'], 'Al Mamzar Beach': ['mamzar beach'], 'Al Qusais': ['al qusais metro', 'al qusais station'],
+    'Dubai Frame': ['dubai frame'],
 }
 
 # ------------------------------------------------------------------ tiling
@@ -398,6 +406,15 @@ def main():
     else:
         els, stamp = fetch([p['bbox'] for p in phases], args.cache)
     print('OSM elements:', len(els), 'data as of', stamp)
+    # the real border: the parts of the phase boxes that lie in another emirate (Sharjah, ...) are left out
+    for r in (e for e in els if e['type'] == 'relation'):
+        t = r.get('tags', {})
+        if t.get('boundary') == 'administrative' and t.get('admin_level') == '4':
+            nm = (t.get('name:en') or t.get('name') or '')
+            if 'dubai' in nm.lower() or 'دبي' in nm: continue
+            g = relation_polys(r)
+            if g is not None and g.intersects(extent):
+                extent = extent.difference(g); print('  outside Dubai, left out:', nm)
 
     ex0, ey0, ex1, ey1 = extent.bounds
     allowed = {(ix, iy) for ix in range(math.floor(ex0 / TS), math.floor(ex1 / TS) + 1) for iy in range(math.floor(ey0 / TS), math.floor(ey1 / TS) + 1)
@@ -522,6 +539,76 @@ def main():
         g = relation_polys(r)
         if g is not None: area_feature(g, t)
 
+    # ---- public transport: Dubai Metro and bus routes from the OpenStreetMap route relations
+    routes, stops, metro_lines = [], [], []
+    clipzone = extent.buffer(300)
+    def chain(geoms):
+        shapes, cur = [], []
+        for g in geoms:
+            if len(g) < 2: continue
+            if not cur: cur = list(g); continue
+            if math.dist(cur[-1], g[0]) < 30: cur += g[1:]
+            elif math.dist(cur[-1], g[-1]) < 30: cur += g[::-1][1:]
+            elif len(shapes) == 0 and len(cur) and math.dist(cur[0], g[0]) < 30: cur = cur[::-1] + g[1:]
+            elif len(shapes) == 0 and len(cur) and math.dist(cur[0], g[-1]) < 30: cur = cur[::-1] + g[::-1][1:]
+            else: shapes.append(cur); cur = list(g)
+        if cur: shapes.append(cur)
+        out = []
+        for sh in shapes:          # keep the runs inside the built phases
+            run = []
+            for p in sh:
+                if clipzone.contains(Point(p)): run.append(p)
+                elif run: (out.append(run) if len(run) > 1 else None); run = []
+            if len(run) > 1: out.append(run)
+        return [[[round(x, 1), round(y, 1)] for x, y in r] for r in out if LineString(r).length > 200]
+    seen_stop = set()
+    for r in rels:
+        t = r.get('tags', {})
+        if t.get('type') != 'route' or t.get('route') not in ('bus', 'subway', 'light_rail', 'tram', 'monorail'): continue
+        rail = t['route'] != 'bus'
+        ways_g = [geom_xy(m['geometry']) for m in r.get('members', []) if m.get('type') == 'way' and m.get('role', '') in ('', 'forward', 'backward', 'main') and m.get('geometry')]
+        shapes = chain(ways_g)
+        if not shapes: continue
+        nm = t.get('name:en') or t.get('name') or ''
+        routes.append({'r': t.get('ref') or ('Metro' if rail else 'Bus'), 'n': nm, 't': '1' if rail else '3', 'colour': t.get('colour'), 'shapes': shapes})
+        if rail: metro_lines += shapes
+        for m in r.get('members', []):
+            if m.get('type') != 'node' or 'lat' not in m: continue
+            role = m.get('role', '')
+            if not (role.startswith('stop') or role.startswith('platform')): continue
+            x, y = P(m['lon'], m['lat'])
+            if not clipzone.contains(Point(x, y)): continue
+            mt = m.get('tags', {}); sn = mt.get('name:en') or mt.get('name') or ''
+            if rail:
+                sn = re.sub(r'\s*(metro\s*)?station\s*$', '', sn, flags=re.I).strip() or 'Metro'
+                sn += ' Station'
+            key = (sn, round(x / 40), round(y / 40))
+            if key in seen_stop: continue
+            seen_stop.add(key); stops.append([round(x, 1), round(y, 1), sn, str(m['ref'])])
+    for sh in metro_lines: overview.append({'c': 22, 'n': 'Dubai Metro', 'p': [[round(x), round(y)] for x, y in sh]})
+    stats['routes_bus'] = sum(1 for r in routes if r['t'] == '3'); stats['routes_metro'] = sum(1 for r in routes if r['t'] == '1'); stats['stops'] = len(stops)
+
+    # ---- local businesses (shops, restaurants, services) for storefront signs and the phone's Nearby app
+    biz = []
+    def biz_cat(t):
+        am, sh = t.get('amenity'), t.get('shop')
+        if am in ('restaurant', 'cafe', 'fast_food', 'food_court', 'ice_cream', 'juice_bar') or sh in ('bakery', 'pastry', 'confectionery', 'coffee'): return 'food'
+        if sh in ('car', 'car_repair', 'car_parts', 'tyres', 'motorcycle') or am in ('car_wash', 'fuel', 'car_rental'): return 'auto'
+        if am in ('school', 'college', 'university', 'kindergarten', 'language_school', 'driving_school', 'library', 'training') : return 'learn'
+        if sh: return 'shop'
+        if t.get('office') or t.get('craft') or am in ('bank', 'clinic', 'doctors', 'dentist', 'pharmacy', 'bureau_de_change', 'money_transfer', 'post_office', 'veterinary') \
+           or t.get('healthcare') or t.get('beauty') or sh in ('hairdresser', 'beauty', 'laundry', 'dry_cleaning'): return 'service'
+        return None
+    def biz_add(t, x, y):
+        nm = name_of(t); c = biz_cat(t)
+        if nm and c and extent.contains(Point(x, y)):
+            biz.append([round(x, 1), round(y, 1), nm, c, ' '.join(v for v in (t.get('addr:housenumber'), t.get('addr:street')) if v) or ''])
+    for w in ways:
+        t = w.get('tags', {})
+        if (t.get('shop') or t.get('amenity') or t.get('office')) and w['nodes'][0] == w['nodes'][-1]:
+            g = way_poly(w)
+            if g is not None: c = g.representative_point(); biz_add(t, c.x, c.y)
+
     # ---- the sea: split the map extent by the coastline (land is on the left of a coastline way)
     coast = [LineString(geom_xy(w['geometry'])) for w in ways if w.get('tags', {}).get('natural') == 'coastline' and len(w['geometry']) > 1]
     if coast:
@@ -636,6 +723,7 @@ def main():
         if k:
             T.point(L_POI, k, 0, 0, 0, nm, x, y)
             if nm: places.append({'c': c, 'n': nm, 'x': round(x, 1), 'y': round(y, 1), 'a': t.get('addr:street'), 'b': None}); search.append([nm, x, y, 'place', t.get('name:ar') or c])
+        if t.get('shop') or t.get('amenity') or t.get('office') or t.get('craft') or t.get('healthcare'): biz_add(t, x, y)
 
     # ---- landmarks found in the data
     landmarks = []
@@ -724,6 +812,8 @@ def main():
         if alt and alt != nm_: e.append(alt)
         sout.append(e)
     json.dump(sout, open(os.path.join(out, 'search.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
+    json.dump({'credit': 'Businesses: \u00a9 OpenStreetMap contributors, ODbL', 'b': biz}, open(os.path.join(out, 'biz.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
+    stats['businesses'] = len(biz)
     stats['search_entries'] = len(sout)
 
     world = {
@@ -732,7 +822,7 @@ def main():
         'osm_date': stamp, 'built': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
         'phases': [{'id': p['id'], 'name': p['name'], 'areas': p['areas'], 'bbox': p['bbox']} for p in phases],
         'tiles': tiles, 'city': city, 'communities': communities, 'wards': [], 'overview': overview, 'big': bigo,
-        'skyline': skyline, 'ctrain': [], 'routes': [], 'stops': [], 'ctrl': ctrl, 'places': places,
+        'skyline': skyline, 'ctrain': [], 'routes': routes, 'stops': stops, 'ctrl': ctrl, 'places': places,
         'landmarks': landmarks, 'areas': areas, 'help': {'checked': '', 'places': []}, 'spawn': spawn,
         'credits': {'by': 'Hassan Ali', 'data': ['Map data © OpenStreetMap contributors, Open Database Licence (ODbL)']},
         'pack': PACK, 'decks': 1, 'addr': 0, 'trees': 2, 'photoHeight': -25,

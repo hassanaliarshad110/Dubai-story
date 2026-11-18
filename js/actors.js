@@ -113,13 +113,15 @@ export function makeBus(route = '') {
 export function makeTrain(cars = 3, line = 'Red') {
   const g = new THREE.Group();
   const L = 24.5, W = 2.65, H = 3.3, gap = 0.6;
+  const dxb = !!(window.game && window.game.dubai);       // Dubai Metro: silver cars, a band in the line's colour, no pantograph
+  const bandCol = dxb ? (/green/i.test(line || '') ? 0x2e9d48 : 0xd7262e) : 0xc8102e;
   for (let i = 0; i < cars; i++) {
-    const d = makeCar3D('ctrain'); if (d) { d.position.z = -i * (24.8 + gap); g.add(d); continue; }
+    const d = dxb ? null : makeCar3D('ctrain'); if (d) { d.position.z = -i * (24.8 + gap); g.add(d); continue; }
     const c = new THREE.Group();
-    const b = new THREE.Mesh(box(W, H, L), mat(0xf2f2f0)); b.position.y = 0.6 + H / 2; c.add(b);
-    const band = new THREE.Mesh(box(W + 0.02, 0.5, L + 0.02), mat(0xc8102e)); band.position.y = 1.3; c.add(band);
+    const b = new THREE.Mesh(box(W, H, L), mat(dxb ? 0xd9dde0 : 0xf2f2f0)); b.position.y = 0.6 + H / 2; c.add(b);
+    const band = new THREE.Mesh(box(W + 0.02, 0.5, L + 0.02), mat(bandCol)); band.position.y = 1.3; c.add(band);
     const win = new THREE.Mesh(box(W + 0.03, 1.0, L - 2), mat(0x1f2a33)); win.position.y = 2.5; c.add(win);
-    const pan = new THREE.Mesh(box(0.1, 0.8, 1.6), mat(0x333333)); pan.position.set(0, 0.6 + H + 0.4, 0); c.add(pan);
+    if (!dxb) { const pan = new THREE.Mesh(box(0.1, 0.8, 1.6), mat(0x333333)); pan.position.set(0, 0.6 + H + 0.4, 0); c.add(pan); }
     c.position.z = -i * (L + gap); g.add(c);
   }
   g.userData = { L: cars * (L + gap), W, kind: 'train', line };

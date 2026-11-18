@@ -15,14 +15,14 @@
       "name": "To the Sharjah border",
       "areas": "Deira, Al Mamzar, Al Qusais, Al Nahda, Muhaisnah, Al Twar",
       "bbox": [55.290, 25.255, 55.430, 25.320],
-      "enabled": false
+      "enabled": true
     },
     {
       "id": 3,
       "name": "Creek to Downtown",
       "areas": "Al Jaddaf, Oud Metha, Karama, Bur Dubai, Zabeel, DIFC, Business Bay, Downtown",
       "bbox": [55.255, 25.180, 55.335, 25.270],
-      "enabled": false
+      "enabled": true
     }
   ]
 }

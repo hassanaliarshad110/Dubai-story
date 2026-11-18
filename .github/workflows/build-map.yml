@@ -32,7 +32,7 @@ jobs:
         run: |
           BB=$(python -c "import json;p=[x['bbox'] for x in json.load(open('tools/phases.json'))['phases'] if x.get('enabled')];m=0.02;print('%f,%f,%f,%f'%(min(b[0] for b in p)-m,min(b[1] for b in p)-m,max(b[2] for b in p)+m,max(b[3] for b in p)+m))")
           echo "bbox $BB"
-          osmium extract -b "$BB" -s smart -S types=multipolygon,boundary .cache/gcc.osm.pbf -o .cache/phase.osm.pbf --overwrite
+          osmium extract -b "$BB" -s smart -S types=multipolygon,boundary,route .cache/gcc.osm.pbf -o .cache/phase.osm.pbf --overwrite
           python tools/pbf_to_json.py .cache/phase.osm.pbf .cache/phase.json
       - name: Download Overture Maps buildings (fills in homes OpenStreetMap is missing)
         continue-on-error: true

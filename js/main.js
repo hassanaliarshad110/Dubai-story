@@ -169,10 +169,10 @@ async function boot() {
     catch (e) { console.warn('google 3d', e); game.photo = null; }
   }
   status('Loading people and cars…');
-  await Promise.all(DXB ? [loadHero(), loadVehicles(), loadLyrics(), loadTreeModels()] : [loadHero(), loadVehicles(), loadBusinesses(), loadParks(), loadSigns(), loadBillboards(), loadFields(), loadLyrics(), loadTreeModels(), loadPlazas()]);
+  await Promise.all(DXB ? [loadHero(), loadVehicles(), loadLyrics(), loadTreeModels(), loadBusinesses()] : [loadHero(), loadVehicles(), loadBusinesses(), loadParks(), loadSigns(), loadBillboards(), loadFields(), loadLyrics(), loadTreeModels(), loadPlazas()]);
   tiles = new TileManager(scene, world, { radius: game.photoOn ? Math.max(1, game.settings.radius - 1) : game.settings.radius, meshes: !game.photoOn, onTile: (t, added) => { if (added) { tilePaths(t); buildFuel(t, tiles); } traffic && traffic.onTile(t, added); } });
   tiles.far = mobile ? 1 : 2; if (!game.photoOn) scene.fog.far = fogFar();
-  game.tiles = tiles; if (!DXB) { game.signs = new Signs(scene, tiles); game.r311 = new Requests311(scene, camera, world, canvas, tiles); game.leaves = new Leaves(scene, tiles, mobile ? 60 : 220); game.plazas = new Plazas(scene); }
+  game.tiles = tiles; if (DXB) game.signs = new Signs(scene, tiles); if (!DXB) { game.signs = new Signs(scene, tiles); game.r311 = new Requests311(scene, camera, world, canvas, tiles); game.leaves = new Leaves(scene, tiles, mobile ? 60 : 220); game.plazas = new Plazas(scene); }
   // compile the shaders of newly loaded models off to the side, so the first time one appears the game doesn't stall
   WARM.fn = obj => { obj.position.set(camera.position.x, -500, camera.position.z); obj.traverse(o => { o.frustumCulled = false; }); scene.add(obj);
     const done = () => scene.remove(obj); try { renderer.compileAsync(obj, camera, scene).then(done, done); } catch (e) { done(); } };
@@ -383,7 +383,7 @@ function watchStuck(dt, inp) {
   camSnap();
 }
 game.setWaypointRaw = p => { game.waypoint = p ? { x: p.x, y: p.y } : null; };
-game.updateMoney = () => { $('#money').textContent = '$' + (missions ? missions.money : 40).toFixed(2); };
+game.updateMoney = () => { $('#money').textContent = (game.dubai ? 'AED ' : '$') + (missions ? missions.money : 40).toFixed(2); };
 game.snapshot = () => { renderer.render(scene, camera); return canvas.toDataURL('image/jpeg', 0.7); };
 game.camera = camera;
 game.setRadius = r => { game.settings.radius = r; tiles.radius = r; scene.fog.far = fogFar(); saveSettings(); };
@@ -673,7 +673,7 @@ function loop(now) {
       else if (stg && (stg.nearMic || onStage)) setPrompt(onStage ? 'Press E (✋) to finish your set' : 'Press E (✋) to take the mic and rap 🎤');
       else if (player.glide) setPrompt('Gliding 🪂 · steer with ← → · forward to dive, back to slow down');
       else if (bstop && !(game.people && game.people.near)) setPrompt(`Press E (✋) to catch a bus at ${bstop.name}`);
-      else setPrompt(game.people && game.people.near ? 'Press E (✋) to check in on them' : nearHeli ? 'Press F (🚗) to fly the helicopter' : stn ? `Press E (✋) to take the CTrain from ${stn.name}` : c ? (c.mesh.userData.kind === 'bike' ? 'Press F (🚗) to ride the motorbike' : 'Press F (🚗) to get in the car') : player.seat ? 'Move or press E (✋) to get up' : seat ? (seat.kind === 'table' ? 'Press E (✋) to sit at the picnic table' : 'Press E (✋) to sit on the bench') : null);
+      else setPrompt(game.people && game.people.near ? 'Press E (✋) to check in on them' : nearHeli ? 'Press F (🚗) to fly the helicopter' : stn ? `Press E (✋) to take the ${game.dubai ? 'Metro' : 'CTrain'} from ${stn.name}` : c ? (c.mesh.userData.kind === 'bike' ? 'Press F (🚗) to ride the motorbike' : 'Press F (🚗) to get in the car') : player.seat ? 'Move or press E (✋) to get up' : seat ? (seat.kind === 'table' ? 'Press E (✋) to sit at the picnic table' : 'Press E (✋) to sit on the bench') : null);
     }
     else if (player.mode === 'car') setPrompt(null);
     const tg = game.target(); if (tg && !missions.goal && game.waypoint && !game.waypoint.guide) { const d = Math.hypot(tg.x - player.x, tg.y - player.y); if (d < 30) { game.waypoint = null; toast('You reached your waypoint'); } }

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# (gates and bins on villa walls)
 """Dubai City Stories - map builder.
 
 Turns OpenStreetMap data for the enabled phases in tools/phases.json into the game's map:

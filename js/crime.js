@@ -269,7 +269,7 @@ export class Crime {
     if (P) for (const w of [...P.walkers]) { const q = w.ch.g.position, d = Math.hypot(q.x - x, -q.z - y); if (d < R && Math.abs(q.y - z) < R) this.hitPed(w, 400, q.x - x, -q.z - y); else if (d < R * 6) { w.sp = 4.8; w.pause = 0; w.panic = 14; } }
     for (const c of this.g.traffic.cars) { if (c.dead || c.blown) continue; const d = Math.hypot(c.x - x, c.y - y); if (d < R + 1.5 && Math.abs(c.gy - z) < R + 3) { c.hp = (c.hp ?? 160) - (420 * (1 - d / (R + 1.5)) + 60); if (c.hp <= 0) setTimeout(() => this.blowCar(c), 120 + Math.random() * 250); } }
     for (const u of this.units) { if (u.dead) continue; const d = Math.hypot(u.x - x, u.y - y); if (d < R + 1.5) this.hitUnit(u, 420 * (1 - d / (R + 1.5)) + 60); }
-    if (this.g.deadT <= 0) { const d = Math.hypot(p.x - x, p.y - y, (p.gy + 1) - z), k = p.mode === 'foot' ? 1 : 0.45; if (d < R) hurt(Math.round((85 * (1 - d / R) + 8) * k), (p.x - x) / (d || 1), (p.y - y) / (d || 1), 'boom'); }
+    if (!(this.g.deadT > 0)) { const d = Math.hypot(p.x - x, p.y - y, (p.gy + 1) - z), k = p.mode === 'foot' ? 1 : 0.45; if (d < R) hurt(Math.round((85 * (1 - d / R) + 8) * k), (p.x - x) / (d || 1), (p.y - y) / (d || 1), 'boom'); }
     if (mine) this.crime(0.8, 'Explosion!');
   }
   // ---------------------------------------------------------------- small effects
@@ -302,7 +302,7 @@ export class Crime {
       if (u.dead) continue;
       const dx = p.x - u.x, dy = p.y - u.y, d = Math.hypot(dx, dy);
       if (u.leave != null) { u.leave -= dt; if (u.leave <= 0 || d > 260) { u.dead = true; this.scene.remove(u.mesh); continue; } }
-      else if (d > 340) { u.dead = true; this.scene.remove(u.mesh); continue; }
+      else if (d > 280) { u.dead = true; this.scene.remove(u.mesh); continue; }
       else nearest = Math.min(nearest, d);
       // steer at the player (or just drive on when leaving), round buildings
       let want_h = u.leave != null ? u.h : Math.atan2(dx, dy), pick = null;
@@ -352,7 +352,7 @@ export class Crime {
     if (this.elFire.style.display === 'none' && this.g.started) this.show(true);
     this.cool -= dt;
     const W = WEAPONS[this.w];
-    if (this.held && this.cool <= 0 && !this.g.paused && this.g.deadT <= 0) { this.cool = W.every; this.fire(); }
+    if (this.held && this.cool <= 0 && !this.g.paused && !(this.g.deadT > 0)) { this.cool = W.every; this.fire(); }
     const ch = p.char;
     if (ch && p.mode === 'foot' && !W.melee && !W.throw && !W.strike) { const a = this.held || this.cool > -0.6 ? 1 : 0, cur = ch.pose && ch.pose.aim != null ? ch.pose.aim : 0, n = cur + (a - cur) * Math.min(1, dt * 12); if (!(ch.pose && (ch.pose.ride || ch.pose.glide || ch.pose.throw != null))) ch.pose = n > 0.02 ? { aim: n } : null; }
     else if (ch && ch.pose && ch.pose.aim != null) ch.pose = null;

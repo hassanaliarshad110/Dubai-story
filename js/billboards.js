@@ -32,6 +32,16 @@ const ADS = [
   { bg: ['#0c2a4a', '#1f6fb5'], bar: '#7fe0ff', big: 'DUBAI INSIGHT', sub: 'The city in numbers', foot: 'Open data, made clear', col: '#ffffff' },
   { bg: ['#2a1a05', '#a8741a'], bar: '#fff1c0', big: 'YOUR BRAND HERE', sub: 'Put your business on the map', foot: 'Dubai City Stories · ad space', col: '#fff1c0' },
 ];
+function videoTexture() {
+  let t = TEX.get('video'); if (t) return t;
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 576; const g = c.getContext('2d');
+  const grd = g.createLinearGradient(0, 0, 1024, 576); grd.addColorStop(0, '#12061f'); grd.addColorStop(1, '#3a0d2e'); g.fillStyle = grd; g.fillRect(0, 0, 1024, 576);
+  g.fillStyle = '#e11d2a'; g.beginPath(); g.roundRect(412, 120, 200, 140, 34); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(488, 152); g.lineTo(488, 228); g.lineTo(556, 190); g.fill();
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#ffffff'; g.font = '900 110px "Segoe UI", Roboto, Arial, sans-serif'; g.fillText('AFLATOON', 512, 350);
+  g.font = '700 44px "Segoe UI", Roboto, Arial, sans-serif'; g.fillStyle = '#ffd76a'; g.fillText('Music videos · Project Hip Hop Desi', 512, 440);
+  g.font = '500 30px "Segoe UI", Roboto, Arial, sans-serif'; g.fillStyle = 'rgba(255,255,255,0.8)'; g.fillText('Walk up to watch · tap to open YouTube', 512, 506);
+  t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; TEX.set('video', t); return t;
+}
 function adTexture(i) {
   const key = 'ad' + i; let t = TEX.get(key); if (t) return t; const a = ADS[i % ADS.length];
   const c = document.createElement('canvas'); c.width = 1024; c.height = 432; const g = c.getContext('2d');
@@ -55,7 +65,7 @@ export function dubaiBoards(world, roofAt) {
       if (acc < 520) continue; acc = 0;
       const dx = (b[0] - a[0]) / l, dy = (b[1] - a[1]) / l, off = (r.c === 1 ? 17 : 12), x = (a[0] + b[0]) / 2 + dy * off, y = (a[1] + b[1]) / 2 - dx * off;
       if (!far(x, y)) continue;
-      out.push({ x, y, h: Math.atan2(-dx, -dy), ad: (n * 5 + (n % 2 ? 0 : 3)) % ADS.length, roofAt }); n++;
+      const b = { x, y, h: Math.atan2(-dx, -dy), ad: (n * 5 + (n % 2 ? 0 : 3)) % ADS.length, roofAt }; if (n % 4 === 1) b.video = (n - 1) / 4; out.push(b); n++;      // every fourth is a video screen
     }
   }
   return out;
@@ -72,11 +82,12 @@ export class Billboards {
         const g = b.g = new THREE.Group(), gy = ground(b.x, b.y);
         g.position.set(b.x, gy, -b.y); g.rotation.y = rotY(b.h);
         for (const x of [-3.6, 3.6]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.45, 7, 0.45), postMat); p.position.set(x, 3.5, -0.3); p.castShadow = true; g.add(p); }
-        const back = new THREE.Mesh(new THREE.BoxGeometry(12.4, 5.4, 0.3), backMat); back.position.set(0, 9.3, -0.3); back.castShadow = true; g.add(back);
-        b.mat = new THREE.MeshBasicMaterial({ map: b.ad != null ? adTexture(b.ad) : wardTexture(b.ward, b.councillor), toneMapped: false });
-        const face = new THREE.Mesh(new THREE.PlaneGeometry(12, 5.06), b.mat); face.position.set(0, 9.3, -0.14); g.add(face);
+        const vid = b.video != null, bw = vid ? 16 : 12, bh = vid ? 9 : 5.06, by = vid ? 11.2 : 9.3;
+        const back = new THREE.Mesh(new THREE.BoxGeometry(bw + 0.4, bh + 0.34, 0.3), backMat); back.position.set(0, by, -0.3); back.castShadow = true; g.add(back);
+        b.mat = new THREE.MeshBasicMaterial({ map: vid ? videoTexture() : b.ad != null ? adTexture(b.ad) : wardTexture(b.ward, b.councillor), toneMapped: false });
+        const face = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), b.mat); face.position.set(0, by, -0.14); g.add(face); b.face = face;
         this.scene.add(g);
-      } else if (d > 1500 && b.g) { this.scene.remove(b.g); b.g = null; }
+      } else if (d > 1500 && b.g) { this.scene.remove(b.g); b.g = null; b.face = null; }
       if (b.mat) b.mat.color.setScalar(night ? 0.95 : 0.85);
     }
   }

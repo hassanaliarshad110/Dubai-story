@@ -26,7 +26,11 @@ jobs:
       - name: Download OpenStreetMap (GCC states, from Geofabrik)
         run: |
           mkdir -p .cache
-          curl -sSfL -o .cache/gcc.osm.pbf https://download.geofabrik.de/asia/gcc-states-latest.osm.pbf
+          for i in 1 2 3 4 5; do
+            curl -sSfL --retry 5 --retry-all-errors --retry-delay 15 -o .cache/gcc.osm.pbf https://download.geofabrik.de/asia/gcc-states-latest.osm.pbf && osmium fileinfo .cache/gcc.osm.pbf > /dev/null && break
+            echo "download failed, trying again"; rm -f .cache/gcc.osm.pbf; sleep 30
+          done
+          test -s .cache/gcc.osm.pbf
           ls -la .cache
       - name: Cut out the enabled phases
         run: |

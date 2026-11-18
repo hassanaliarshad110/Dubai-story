@@ -20,3 +20,4 @@ data/veh/dxb_jeep.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnW
 data/veh/dxb_sentra.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234355_386aa089-a6b9-4f66-846d-2d3d9413d5b5.glb
 data/veh/dxb_lexus.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234357_cfe95949-a584-4917-b73e-0c4c4a868967.glb
 data/chars/kandura.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234540_f01f72bd-fb02-469e-b351-7ff9784ce008.glb
+data/chars/kandura_src.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234422_07b0bded-9061-457e-a63d-9bf53bc986a1.glb

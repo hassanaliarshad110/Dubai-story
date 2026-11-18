@@ -445,17 +445,37 @@ def main():
         if h > 0:
             for nid in w['nodes']: NH[nid] = max(NH[nid], h)
 
+    # ramps carry on from one way to the next: a short link road that leaves a flyover half-way down hands its height to
+    # the road it joins, so no ramp ends in a step a car cannot climb
+    def ramp_z(w, typ, H):
+        raisedIdx = [i for i, n in enumerate(w['nodes']) if H.get(n, 0) > 0]
+        if not raisedIdx: return None, None
+        pts = geom_xy(w['geometry']); grade = 0.035 if typ == 'rail' else 0.055
+        if len(pts) != len(w['nodes']): return None, None
+        d = [0.0]
+        for i in range(1, len(pts)): d.append(d[-1] + math.dist(pts[i - 1], pts[i]))
+        return pts, [max(0.0, max(H[w['nodes'][r]] - grade * abs(d[i] - d[r]) for r in raisedIdx)) for i in range(len(pts))]
+    PH = dict(NH)
+    ground_ways = [(w, typ) for w, typ in linear if typ != 'air' and deck_height(w['tags'], typ == 'rail') <= 0 and w['tags'].get('tunnel') not in ('yes', 'culvert', 'flooded') and len(w['nodes']) == len(w['geometry'])]
+    for _pass in range(8):
+        changed = 0
+        for w, typ in ground_ways:
+            if not any(PH.get(n, 0) > 0 for n in w['nodes']): continue
+            _, zs = ramp_z(w, typ, PH)
+            if zs is None: continue
+            for n, z in zip(w['nodes'], zs):
+                if z > 0.15 and z > PH.get(n, 0) + 0.05: PH[n] = z; changed += 1
+        if not changed: break
+    stats['ramp_nodes'] = len(PH) - len(NH)
+
     def heights(w, typ):
         t = w['tags']; pts = geom_xy(w['geometry'])
         if t.get('tunnel') in ('yes', 'culvert', 'flooded'): return pts, None
         h = deck_height(t, typ == 'rail')
         if h > 0: return pts, [max(h, NH[n]) if NH[n] else h for n in w['nodes']]
-        raisedIdx = [i for i, n in enumerate(w['nodes']) if NH.get(n, 0) > 0]
-        if not raisedIdx: return pts, None
-        grade = 0.035 if typ == 'rail' else 0.055
-        d = [0.0]
-        for i in range(1, len(pts)): d.append(d[-1] + math.dist(pts[i - 1], pts[i]))
-        zs = [max(0.0, max(NH[w['nodes'][r]] - grade * abs(d[i] - d[r]) for r in raisedIdx)) for i in range(len(pts))]
+        if len(w['nodes']) != len(pts): return pts, None
+        p2, zs = ramp_z(w, typ, PH)
+        if zs is None or max(zs) <= 0.02: return pts, None
         return pts, zs
 
     overview, ctrl, streets = [], [], {}

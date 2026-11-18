@@ -24,7 +24,7 @@ export function heal(n) { G.hp = Math.min(100, G.hp + n); draw(); }
 function die(why) {
   G.hp = 0; G.deadT = 5; const p = G.player; p.v = 0; if (p.char) p.char.g.visible = false;
   let ov = document.getElementById('dead'); if (!ov) { ov = document.createElement('div'); ov.id = 'dead'; document.body.appendChild(ov); }
-  ov.hidden = false; ov.dataset.why = why;
+  ov.hidden = false; ov.dataset.why = why; if (G.dubai) { ov.className = 'wasted'; document.body.classList.add('wasted'); }
   const by = G.lastHit && performance.now() - G.lastHit.t < 8000 ? G.lastHit.by : null;
   if (G.onDeath) G.onDeath(why, by); G.lastHit = null;
 }
@@ -34,6 +34,7 @@ function respawn(why) {
   if (G.dubai) { x = -2166.1; y = 72.4; if (p.mode === 'car') { const c = p.exit(); if (c && G.traffic) G.traffic.release(c); const sp = document.getElementById('speed'); if (sp) sp.hidden = true; } }      // Dubai: you wake up at Rashid Hospital
   else if (G.tiles && G.tiles.safeSpot) { const s = G.tiles.safeSpot(x, y, { maxR: 40 }); x = s.x; y = s.y; }
   if (G.dubai && G.teleport) G.teleport(x, y); else p.place(x, y, p.h); G.hp = 100; inv = 2; G.deadT = 0; if (p.char) p.char.g.visible = true; const ov = document.getElementById('dead'); if (ov) ov.hidden = true;
+  if (G.dubai) { document.body.classList.remove('wasted'); let h = document.getElementById('hosp'); if (!h) { h = document.createElement('div'); h.id = 'hosp'; document.body.appendChild(h); } h.innerHTML = '<b>RASHID HOSPITAL</b><small>Oud Metha · Emergency & Trauma Centre · you were discharged</small>'; h.hidden = false; clearTimeout(G._hospT); G._hospT = setTimeout(() => { h.hidden = true; }, 5500); }
   toast(G.dubai ? '🏥 You wake up at Rashid Hospital.' : why === 'splash' ? '💦 Back in the game!' : '🚑 Ouch! You got patched up nearby.');
   if (G.onRespawn) G.onRespawn(why);
 }
@@ -42,7 +43,7 @@ export function updateHealth(dt, vehicles) {
   if (!G || !G.player) return; if (inv > 0) inv -= dt;
   if (G.deadT > 0) {
     G.deadT -= dt; const ov = document.getElementById('dead');
-    if (ov) ov.textContent = G.dubai ? `WASTED · back in ${Math.max(1, Math.ceil(G.deadT))}…` : `${ov.dataset.why === 'splash' ? '💦 You got splatted!' : '🚑 Knocked out!'} Back in ${Math.max(1, Math.ceil(G.deadT))}…`;
+    if (ov && G.dubai) { if (!ov.firstChild || ov.firstChild.tagName !== 'B') ov.innerHTML = '<b>WASTED</b><small></small>'; ov.lastChild.textContent = `Ambulance to Rashid Hospital · ${Math.max(1, Math.ceil(G.deadT))}`; } else if (ov) ov.textContent = `${ov.dataset.why === 'splash' ? '💦 You got splatted!' : '🚑 Knocked out!'} Back in ${Math.max(1, Math.ceil(G.deadT))}…`;
     if (G.deadT <= 0) respawn(ov ? ov.dataset.why : ''); return;
   }
   if ((regenT -= dt) <= 0 && G.hp < 100) { G.hp = Math.min(100, G.hp + dt * 3); draw(); }

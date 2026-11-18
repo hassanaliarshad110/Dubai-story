@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { busSignTexture } from './textures.js?v=11112231';
 import { vehiclesReady, makeKarachiVehicle } from './vehicles.js?v=11112231';
-import { makeCar3D, addPlates } from './cars3d.js?v=11112231';
+import { makeCar3D, addPlates, CAR3D } from './cars3d.js?v=11112231';
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const mat = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
@@ -49,15 +49,41 @@ function policeKit(g, L, W, roofY, decalY) {
   g.userData.beacons = [lr, lb]; g.userData.police = true;
 }
 // Dubai: Patrols, Land Cruisers, red Yaris and black Tiidas fill the roads, and every car wears a UAE plate
+// Dubai Police: white with the green band. Patrols and Land Cruisers on the beat, and the famous supercars for the chase
+let DXB_POLICE_TEX = null;
+function dxbPoliceTex() {
+  if (DXB_POLICE_TEX) return DXB_POLICE_TEX;
+  const c = document.createElement('canvas'); c.width = 512; c.height = 96; const x = c.getContext('2d');
+  x.fillStyle = '#0b6b3a'; x.fillRect(0, 30, 512, 36); x.fillStyle = '#0b6b3a'; x.beginPath(); x.moveTo(0, 30); x.lineTo(70, 8); x.lineTo(150, 8); x.lineTo(90, 30); x.fill();
+  x.font = '800 27px "Segoe UI", Roboto, Arial, sans-serif'; x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('POLICE', 190, 49); x.fillText('شرطة', 350, 48);
+  x.font = '700 15px "Segoe UI", Roboto, Arial, sans-serif'; x.fillStyle = '#0b6b3a'; x.fillText('DUBAI POLICE · 999', 256, 82);
+  DXB_POLICE_TEX = new THREE.CanvasTexture(c); DXB_POLICE_TEX.colorSpace = THREE.SRGBColorSpace; return DXB_POLICE_TEX;
+}
+function dubaiPolice() {
+  const r = Math.random(), order = r < 0.3 ? ['dxb_lambo', 'dxb_ferrari', 'patrol', 'landcruiser'] : r < 0.5 ? ['dxb_ferrari', 'dxb_lambo', 'landcruiser', 'patrol'] : r < 0.76 ? ['patrol', 'landcruiser'] : ['landcruiser', 'patrol'];
+  for (const k of order) {
+    const g = makeCar3D(k); if (!g) continue; const u = g.userData, R = CAR3D[k], sup = k.startsWith('dxb_');
+    const decal = new THREE.MeshBasicMaterial({ map: dxbPoliceTex(), transparent: true, alphaTest: 0.1 }), red = new THREE.MeshBasicMaterial({ color: 0xff2020 }), blue = new THREE.MeshBasicMaterial({ color: 0x2a5cff }), bar = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+    if (!sup) for (const s of [1, -1]) { const d = new THREE.Mesh(new THREE.PlaneGeometry(R.L * 0.6, R.L * 0.6 * 96 / 512), decal); d.position.set(s * (R.W / 2 + 0.02), R.H * 0.5, -0.1); d.rotation.y = s * Math.PI / 2; g.add(d); }
+    const roofY = R.H + (sup ? 0.0 : 0.03), bw = R.W * (sup ? 0.42 : 0.6);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(bw, 0.07, 0.26), bar); b.position.set(0, roofY, sup ? -0.25 : -0.2); g.add(b);
+    const lr = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.46, 0.11, 0.24), red), lb = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.46, 0.11, 0.24), blue);
+    lr.position.set(-bw * 0.26, roofY + 0.08, b.position.z); lb.position.set(bw * 0.26, roofY + 0.08, b.position.z); g.add(lr, lb);
+    u.beacons = [lr, lb]; u.police = true; u.kind = 'police'; u.name = sup ? R.name : 'Dubai Police ' + R.name;
+    return addPlates(g);
+  }
+  return null;
+}
 export function makeCar(kind = 'car', colour) {
   const dxb = !!(window.game && window.game.dubai);
+  if (dxb && kind === 'police') { const p = dubaiPolice(); if (p) return p; }
   if (dxb && (kind === 'car' || kind === 'suv' || kind === 'family' || CAR3D_DXB.includes(kind))) {
-    const r = Math.random(), k = CAR3D_DXB.includes(kind) ? kind : kind === 'suv' ? (r < 0.5 ? 'patrol' : 'landcruiser') : r < 0.2 ? 'patrol' : r < 0.4 ? 'landcruiser' : r < 0.55 ? 'yaris' : r < 0.7 ? 'tiida' : r < 0.82 ? 'sorento' : null;
+    const r = Math.random(), k = CAR3D_DXB.includes(kind) ? kind : kind === 'suv' ? (r < 0.5 ? 'patrol' : 'landcruiser') : r < 0.18 ? 'patrol' : r < 0.36 ? 'landcruiser' : r < 0.48 ? 'yaris' : r < 0.62 ? 'tiida' : r < 0.72 ? 'sentra' : r < 0.8 ? 'lexus' : r < 0.86 ? 'jeep' : r < 0.93 ? 'sorento' : null;
     const m = k && makeCar3D(k); if (m) return addPlates(m);
   }
   const g = makeCar0(kind, colour); return dxb ? addPlates(g) : g;
 }
-const CAR3D_DXB = ['patrol', 'landcruiser', 'yaris', 'tiida'];
+const CAR3D_DXB = ['patrol', 'landcruiser', 'yaris', 'tiida', 'jeep', 'sentra', 'lexus'];
 function makeCar0(kind = 'car', colour) {
   // the detailed models: police SUVs (now and then a community peace officer), pickups and off-roaders
   { const r = Math.random(), k = kind === 'police' ? (r < 0.3 ? 'peace' : 'police') : kind === 'peace' ? 'peace' : kind === 'truck' ? 'pickup' : kind === 'suv' ? (r < 0.6 ? 'offroad' : 'pickup') : kind === 'car' ? (r < 0.12 ? 'pickup' : r < 0.2 ? 'offroad' : r < 0.32 ? 'sorento' : r < 0.42 ? 'rondo' : r < 0.52 ? 'veloster' : null) : null;

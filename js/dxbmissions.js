@@ -14,18 +14,27 @@ export const MISSIONS = {
     { id: 'h1', name: 'Airport pickup', pay: 300, start: 'DXB Terminal 3', intro: 'A client just landed. Get him to City Centre Deira before he starts calling other drivers.', steps: [go('Deira City Centre', 'Drive the client to City Centre Deira', { time: 240, car: true })] },
     { id: 'h2', name: 'Cash run', pay: 600, start: 'Gold Souk', intro: 'A trader in the Gold Souk needs an envelope at The Dubai Mall. Do not stop for anyone.', steps: [go('The Dubai Mall', 'Take the envelope to The Dubai Mall', { time: 420, car: true })] },
     { id: 'h3', name: 'The repo', pay: 900, start: 'Wafi City', intro: 'Someone stopped paying for a white Patrol. It is parked nearby. Take it back.', steps: [{ k: 'steal', car: 'patrol', text: 'Take the marked Nissan Patrol' }, go('Al Garhoud Bridge', 'Bring the Patrol across to Al Garhoud Bridge', { car: true, same: true })] },
+    { id: 'h5', name: 'Karak run', pay: 250, start: '27C Street, Al Garhoud', intro: 'The whole house wants karak. Drive to Karakccino, stop outside and HONK. They bring it to the window. Then get home before it goes cold.', steps: [go('Karakccino', 'Drive to Karakccino', { car: true }), { k: 'karak', text: 'Stop outside and honk for karak 📣' }, go('27C Street, Al Garhoud', 'Get the karak home hot', { time: 150, car: true })] },
+    { id: 'h6', name: 'The viewing', pay: 1200, start: 'The Opus by OMNIYAT', intro: 'A buyer has landed for a penthouse viewing. Collect him from Terminal 3 and bring him to The Opus. One radar flash and he walks: he has seen how people drive here.', steps: [go('DXB Terminal 3', 'Collect the buyer from Terminal 3', { car: true }), go('The Opus by OMNIYAT', 'Drive him to The Opus. No radar flashes!', { time: 600, car: true, noFine: true })] },
+    { id: 'h7', name: 'Handover day', pay: 1800, start: 'One by OMNIYAT', intro: 'Four handovers, four towers, one afternoon. Keys in the glovebox. Business Bay traffic does not care.', steps: [go('The Binary by OMNIYAT', 'Keys to The Binary', { car: true }), go('Bayswater by OMNIYAT', 'Keys to Bayswater', { car: true }), go('The Pad by OMNIYAT', 'Keys to The Pad', { car: true }), go('The Sterling by OMNIYAT', 'Last one: The Sterling', { time: 200, car: true })] },
+    { id: 'h8', name: 'Bounced cheque', pay: 1500, start: 'The Sterling by OMNIYAT', intro: 'An investor paid his booking with a cheque that bounced. Twice. His Land Cruiser is parked nearby. The office wants it at The Opus until he pays.', steps: [{ k: 'steal', car: 'landcruiser', text: 'Take the marked Land Cruiser' }, go('The Opus by OMNIYAT', 'Bring it to The Opus', { car: true, same: true }), { k: 'lose', stars: 2, text: 'He called the police. Lose them' }] },
     { id: 'h4', name: 'Closing the books', pay: 1500, start: 'Business Bay', intro: 'Three cars belong to people who cheated the wrong man. Make sure none of them drives again, then disappear.', steps: [{ k: 'destroy', n: 3, text: 'Destroy the three marked cars' }, { k: 'lose', stars: 3, text: 'Lose the police' }] },
   ],
   farah: [
     { id: 'f1', name: 'Creek dash', pay: 400, start: 'Al Seef', intro: 'A bet: Al Seef to Festival City before the abra crosses the Creek. Go.', steps: [go('Dubai Festival City', 'Race to Dubai Festival City', { time: 330, car: true })] },
     { id: 'f2', name: 'Three shots', pay: 700, start: 'Dubai Frame', intro: 'The magazine wants three pictures by tonight: the Frame, the Museum of the Future and the Burj.', steps: [go('Museum of the Future', 'Photograph the Museum of the Future'), go('Burj Khalifa', 'Photograph the Burj Khalifa')] },
     { id: 'f3', name: 'Front row', pay: 300, start: 'The Dubai Mall', intro: 'The show starts after dark. Get to the fountain.', night: true, steps: [go('Dubai Fountain', 'Get to the Dubai Fountain for the show')] },
+    { id: 'f5', name: 'Golden hour', pay: 600, start: 'Vela by OMNIYAT', intro: 'The developer wants sunset pictures of every tower on the canal for the brochure. The light lasts ten minutes.', steps: [go('The Sterling by OMNIYAT', 'Shoot The Sterling'), go('The Pad by OMNIYAT', 'Shoot The Pad', { time: 240 }), go('The Opus by OMNIYAT', 'Shoot The Opus', { time: 360 })] },
+    { id: 'f6', name: 'Chai first', pay: 300, start: 'Al Seef', intro: 'Nobody shoots before chai. Arabian Tea House, then the Frame while the light is good.', steps: [go('Arabian Tea House', 'Tea at Arabian Tea House'), go('Dubai Frame', 'Get to the Dubai Frame', { time: 420, car: true })] },
     { id: 'f4', name: 'Getaway', pay: 1200, start: 'DIFC Gate Building', intro: 'Your passenger did something stupid in DIFC and now every patrol car is looking for your plates.', steps: [{ k: 'lose', stars: 3, text: 'Lose the police' }] },
   ],
   ali: [
     { id: 'a1', name: 'First day', pay: 300, start: 'DXB Terminal 1', intro: 'Welcome to Dubai. Your cousin said to meet him in old Dubai. Find your way.', steps: [go('Union Metro Station', 'Get to Union station'), go('Al Fahidi Historical Neighbourhood', 'Meet your cousin in Al Fahidi')] },
     { id: 'a2', name: 'Souk errands', pay: 500, start: 'Spice Souk', intro: 'Your cousin has a list. Spices, then gold, then a package to BurJuman.', steps: [go('Gold Souk', 'Pick up the order in the Gold Souk'), go('BurJuman', 'Deliver the package to BurJuman', { time: 300 })] },
     { id: 'a3', name: 'Delivery rider', pay: 600, start: 'Deira City Centre', intro: 'A food order for Al Mamzar Beach, and the customer is counting the minutes.', steps: [go('Al Mamzar Beach', 'Deliver the order to Al Mamzar Beach', { time: 420, car: true })] },
+    { id: 'a5', name: 'Karak boy', pay: 350, start: 'FiLLi Café', intro: 'Your first shift. Three karak, one customer at Wafi, and he tips only if it is hot.', steps: [go('Wafi City', 'Deliver the karak to Wafi City', { time: 260, car: true })] },
+    { id: 'a6', name: 'Off-plan', pay: 900, start: 'Business Bay', intro: 'Your cousin got you a job handing out brochures. "Sir, are you interested in off-plan?" Three lobbies before the security guards compare notes.', steps: [go('The Binary by OMNIYAT', 'Brochures at The Binary'), go('The Opus by OMNIYAT', 'Brochures at The Opus', { time: 200 }), go('One by OMNIYAT', 'Brochures at One by OMNIYAT', { time: 260 })] },
+    { id: 'a7', name: 'Clean licence', pay: 800, start: 'Al Garhoud Bridge', intro: 'Your uncle bets you cannot cross town without one radar flash. Garhoud to the Dubai Mall. Limit plus twenty, not a kilometre more.', steps: [go('The Dubai Mall', 'Reach The Dubai Mall without a single flash', { time: 540, car: true, noFine: true })] },
     { id: 'a4', name: 'Wrong crowd', pay: 1200, start: 'Zabeel Park', intro: 'Your cousin owes money. The men he owes parked two cars by Zabeel Park. He wants them gone.', steps: [{ k: 'destroy', n: 2, text: 'Destroy the two marked cars' }, { k: 'lose', stars: 2, text: 'Lose the police' }] },
   ],
 };
@@ -57,6 +66,7 @@ export class DubaiMissions {
     const c = this.cur; c.i++; this.clearExtra();
     if (c.i >= c.m.steps.length) return this.pass();
     const s = c.s = c.m.steps[c.i], p = this.g.player; c.t = s.time || 0;
+    c.fines = this.g.fun ? this.g.fun.count : 0; c.karak = this.g.fun ? (this.g.fun.karaks || 0) : 0;
     if (s.k === 'go') { const q = this.pos(s.at); this.mark(q.x, q.y); }
     else if (s.k === 'steal') { const car = this.spawnCar(s.car, p.x, p.y, 0); c.car = car; this.mark(car.x, car.y); }
     else if (s.k === 'destroy') { c.targets = []; for (let i = 0; i < s.n; i++) c.targets.push(this.spawnCar(['tiida', 'landcruiser', 'yaris'][i % 3], p.x, p.y, i + 1)); this.mark(c.targets[0].x, c.targets[0].y); }
@@ -86,7 +96,9 @@ export class DubaiMissions {
     const c = this.cur, s = c.s; if (this.g.deadT > 0) return this.fail('You were wasted.');
     let line = s.text;
     if (s.time) { c.t -= dt; if (c.t <= 0) return this.fail('Out of time.'); line += ` · <i>${Math.floor(c.t / 60)}:${String(Math.floor(c.t % 60)).padStart(2, '0')}</i>`; }
-    if (s.k === 'go') {
+    if (s.noFine && this.g.fun && this.g.fun.count > c.fines) return this.fail('📸 Flashed by a radar.');
+    if (s.k === 'karak') { if (this.g.fun && (this.g.fun.karaks || 0) > c.karak) return this.step(); }
+    else if (s.k === 'go') {
       const d = Math.hypot(p.x - this.tx, p.y - this.ty); line += ` · ${d > 950 ? (d / 1000).toFixed(1) + ' km' : Math.round(d / 10) * 10 + ' m'}`;
       if (s.car && p.mode !== 'car') line += ' · get a car';
       if (s.same && c.car && c.car.dead) return this.fail('The car was destroyed.');

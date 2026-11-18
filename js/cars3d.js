@@ -17,12 +17,18 @@ export const CAR3D = {
   rondo: { L: 4.55, W: 1.8, H: 1.65 },         // 2008 Kia Rondo, brown
   veloster: { L: 4.22, W: 1.8, H: 1.4 },       // 2015 Hyundai Veloster, orange
   // Dubai City Stories: shaped from the models above, at each car's real size and in its colour
-  patrol: { L: 5.17, W: 1.99, H: 1.94, base: 'sorento', tint: [1.05, 1.05, 1.05], name: 'Nissan Patrol' },          // white
-  landcruiser: { L: 4.95, W: 1.98, H: 1.9, base: 'sorento', tint: [0.98, 0.94, 0.84], name: 'Toyota Land Cruiser' },   // pearl
-  yaris: { L: 3.75, W: 1.69, H: 1.52, base: 'veloster', tint: [3.4, 0.42, 0.42], name: 'Toyota Yaris 2007' },         // red
-  tiida: { L: 4.3, W: 1.7, H: 1.53, base: 'rondo', tint: [0.3, 0.3, 0.33], name: 'Nissan Tiida' },                    // black
+  patrol: { L: 5.17, W: 1.99, H: 1.94, base: 'dxb_patrol', name: 'Nissan Patrol' },          // white
+  landcruiser: { L: 4.95, W: 1.98, H: 1.9, base: 'dxb_suv', name: 'Toyota Land Cruiser' },   // pearl
+  yaris: { L: 3.75, W: 1.69, H: 1.52, base: 'dxb_yaris', name: 'Toyota Yaris 2007' },         // red
+  tiida: { L: 4.3, W: 1.7, H: 1.53, base: 'dxb_tiida', name: 'Nissan Tiida' },
+  jeep: { L: 4.75, W: 1.88, H: 1.84, base: 'dxb_jeep', name: 'Jeep Wrangler' },
+  sentra: { L: 4.62, W: 1.76, H: 1.5, base: 'dxb_sentra', name: 'Nissan Sentra' },
+  lexus: { L: 4.58, W: 1.8, H: 1.43, base: 'dxb_lexus', name: 'Lexus IS' },
+  dxb_lambo: { L: 4.8, W: 2.03, H: 1.14, name: 'Dubai Police Lamborghini' },
+  dxb_ferrari: { L: 4.92, W: 1.95, H: 1.36, name: 'Dubai Police Ferrari' },                    // black
 };
 const READY = {};
+const FLIP = {};      // models that come facing the other way
 
 async function load(kind) {
   const gl = await loader.loadAsync(`data/veh/${CAR3D[kind].base || kind}.glb`); let mesh = null;
@@ -31,6 +37,7 @@ async function load(kind) {
   const geo = mesh.geometry.clone(); geo.applyMatrix4(mesh.matrixWorld);
   geo.computeBoundingBox(); let b = geo.boundingBox, s = b.getSize(new THREE.Vector3());
   if (s.x > s.z) geo.rotateY(-Math.PI / 2);           // the models come facing +x: turn them to face +z
+  if (FLIP[CAR3D[kind].base || kind]) geo.rotateY(Math.PI);
   geo.computeBoundingBox(); b = geo.boundingBox; s = b.getSize(new THREE.Vector3());
   const c = b.getCenter(new THREE.Vector3()), R = CAR3D[kind];
   geo.translate(-c.x, -b.min.y, -c.z); geo.scale(R.W / s.x, R.H / s.y, R.L / s.z);
@@ -40,7 +47,7 @@ async function load(kind) {
   READY[kind] = { geo, mat: mt, wheels: WHEEL_R[kind] ? axleWheels(geo, WHEEL_R[kind]) : null };
 }
 // tyre radius by vehicle (m); the CTrain's wheels are hidden under its skirts
-const WHEEL_R = { pickup: 0.42, offroad: 0.43, police: 0.38, peace: 0.39, bus: 0.5, sorento: 0.37, rondo: 0.33, veloster: 0.32, patrol: 0.42, landcruiser: 0.41, yaris: 0.29, tiida: 0.31 };
+const WHEEL_R = { pickup: 0.42, offroad: 0.43, police: 0.38, peace: 0.39, bus: 0.5, sorento: 0.37, rondo: 0.33, veloster: 0.32 };
 // the wheels: cutting the model's own tyres out of the mesh left holes and black scraps when they turned, so each car
 // gets clean wheels of its own (a tyre and an alloy rim) placed over the model's tyres at its axles, and those spin
 let WHEEL_TEX = null;
@@ -134,7 +141,7 @@ export function makeCar3D(kind) {
     g.add(pv);
     wheels.push(pv); if (w.front) front.push(pv);
   }
-  g.userData = { name: R.name, L: R.L, W: R.W, kind: kind === 'pickup' ? 'truck' : kind === 'offroad' || kind === 'patrol' || kind === 'landcruiser' ? 'suv' : kind === 'yaris' || kind === 'tiida' ? 'car' : kind, model: kind, wheels, front, wheelR: WHEEL_R[kind] || 0.4 };
+  g.userData = { name: R.name, L: R.L, W: R.W, kind: kind === 'pickup' ? 'truck' : kind === 'offroad' || kind === 'patrol' || kind === 'landcruiser' || kind === 'jeep' ? 'suv' : kind === 'yaris' || kind === 'tiida' || kind === 'sentra' || kind === 'lexus' ? 'car' : kind.startsWith('dxb_') ? 'police' : kind, model: kind, wheels, front, wheelR: WHEEL_R[kind] || 0.4 };
   if (kind === 'police' || kind === 'peace') {          // flashing roof lights for the chase
     const a = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.22), new THREE.MeshBasicMaterial({ color: kind === 'peace' ? 0xffa020 : 0xff2020 }));
     const b = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.22), new THREE.MeshBasicMaterial({ color: 0x2a5cff }));

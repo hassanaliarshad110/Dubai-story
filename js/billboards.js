@@ -71,7 +71,7 @@ export function dubaiBoards(world, roofAt) {
       for (const off of [14, 19, 24, 30, 36]) { const qx = (a[0] + b[0]) / 2 + dy * off, qy = (a[1] + b[1]) / 2 - dx * off; if (clear(qx, qy, 11.5)) { x = qx; y = qy; break; } }
       if (x == null) { acc = 400; continue; }
       if (!far(x, y)) continue;
-      const brd = { x, y, h: Math.atan2(-dx, -dy), ad: (n * 5 + (n % 2 ? 0 : 3)) % ADS.length, roofAt }; if (n % 4 === 1) brd.video = (n - 1) / 4; out.push(brd); n++;      // every fourth is a video screen
+      const brd = { x, y, h: Math.atan2(-dx, -dy), ad: (n * 5 + (n % 2 ? 0 : 3)) % ADS.length, roofAt }; if (n % 9 === 4) brd.video = (n - 4) / 9; out.push(brd); n++;      // one in nine is a video screen
     }
   }
   return out;

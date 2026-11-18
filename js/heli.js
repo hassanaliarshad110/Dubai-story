@@ -25,7 +25,7 @@ export function makeHeli() {
     const sk = add(new THREE.CylinderGeometry(0.06, 0.06, 3.4, 8), dk, sx, 0.12, 0); sk.rotation.x = Math.PI / 2;
     for (const z of [-0.7, 0.8]) { const s2 = add(new THREE.BoxGeometry(0.06, 0.75, 0.06), dk, sx * 0.85, 0.48, z); s2.rotation.z = sx > 0 ? -0.25 : 0.25; }
   }
-  const tex = labelTex('YYC STORY');
+  const tex = labelTex(window.game && window.game.dubai ? 'DUBAI CITY' : 'YYC STORY');
   for (const s of [-1, 1]) { const pl = add(new THREE.PlaneGeometry(1.5, 0.38), new THREE.MeshLambertMaterial({ map: tex }), s * 1.06, 1.25, -0.6); pl.rotation.y = s * Math.PI / 2; }
   // a landing light under the nose for night flying
   const beam = new THREE.SpotLight(0xfff2d0, 0, 120, 0.45, 0.6, 1.2); beam.position.set(0, 1.0, 1.4); beam.target.position.set(0, -20, 12); body.add(beam); body.add(beam.target);

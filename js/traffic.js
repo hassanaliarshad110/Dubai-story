@@ -202,7 +202,7 @@ export class Traffic {
       if (Math.hypot(c.x - px, c.y - py) > 480) { c.dead = true; continue; }
       if (c.parked) continue;
       const p = c.piece, toEnd = p.len - c.s;
-      let target = SPEED[p.kind];
+      let target = SPEED[p.kind]; if (this.jam && this.jam < 1 && p.kind <= 3) target *= this.jam;      // Dubai rush hour
       if (p.len < 200 && toEnd < 25) target = Math.min(target, 9);
       // the intersection ahead
       const k = this.endKey(c), n = this.node(k);

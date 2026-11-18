@@ -66,6 +66,23 @@ export const sfx = {
   },
   boom(big = 1) { if (!ok()) return; const t = ctx.currentTime, k = Math.min(1.6, Math.max(0.6, big)); noise(t, 0.9 * k, 0.9, 'lowpass', 500, 0.6); tone(48, 'sine', t, 0.005, 0.9, 0.7 * k); noise(t + 0.06, 1.4 * k, 0.35, 'lowpass', 220, 0.5); noise(t, 0.12, 0.5, 'highpass', 3000, 0.6); },
   whoosh() { if (!ok()) return; const t = ctx.currentTime; noise(t, 0.6, 0.3, 'bandpass', 900, 1.2); noise(t + 0.1, 0.5, 0.2, 'bandpass', 500, 1); },
+  // a real two-speaker police siren: a continuous wail that rises and falls, switching to a fast yelp when they are close
+  sirenSet(vol = 0, yelp = false) {
+    if (!ctx) return; let s = S.siren;
+    if (!s) {
+      if (!ok() || vol <= 0) return;
+      const o = ctx.createOscillator(), o2 = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(), bp = ctx.createBiquadFilter(), sh = ctx.createWaveShaper(), g = ctx.createGain(), g2 = ctx.createGain();
+      o.type = 'sawtooth'; o2.type = 'square'; o.frequency.value = 1000; o2.frequency.value = 1004; lfo.type = 'triangle'; lfo.frequency.value = 0.28; lg.gain.value = 400;
+      lfo.connect(lg); lg.connect(o.frequency); lg.connect(o2.frequency);
+      const cv = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 128 - 1; cv[i] = Math.tanh(x * 2.2); } sh.curve = cv;      // the horn speaker's bite
+      bp.type = 'bandpass'; bp.frequency.value = 1350; bp.Q.value = 0.9; g2.gain.value = 0.45; g.gain.value = 0;
+      o.connect(sh); o2.connect(g2); g2.connect(sh); sh.connect(bp); bp.connect(g); g.connect(master); o.start(); o2.start(); lfo.start();
+      s = S.siren = { o, o2, lfo, lg, g, yelp: false };
+    }
+    const t = ctx.currentTime; s.g.gain.setTargetAtTime(muted ? 0 : Math.min(0.16, 0.16 * vol), t, 0.25);
+    if (yelp !== s.yelp) { s.yelp = yelp; s.lfo.frequency.setTargetAtTime(yelp ? 3.2 : 0.28, t, 0.1); s.lg.gain.setTargetAtTime(yelp ? 330 : 400, t, 0.1); }
+  },
+  camera() { if (!ok()) return; const t = ctx.currentTime; noise(t, 0.05, 0.35, 'highpass', 3500, 0.7); noise(t + 0.09, 0.07, 0.3, 'bandpass', 2400, 1.5); tone(1900, 'square', t + 0.2, 0.004, 0.05, 0.08); },
   siren(vol = 0.5) { if (!ok()) return; const t = ctx.currentTime, v = 0.07 * vol; tone(760, 'sawtooth', t, 0.03, v, 0.3); tone(960, 'sawtooth', t + 0.36, 0.03, v, 0.3); },
   step(run) { if (!ok()) return; const t = ctx.currentTime; noise(t, run ? 0.07 : 0.06, run ? 0.22 : 0.14, 'bandpass', 700 + Math.random() * 500, 1.2); noise(t, 0.04, 0.08, 'lowpass', 180, 0.7); },
   horn(bike) {

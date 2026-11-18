@@ -343,7 +343,7 @@ export class Crime {
     if (this.stars > 0) {
       const seen = nearest < 130; this.elStars.classList.toggle('search', !seen);
       if (seen) this.unseen = 0; else if ((this.unseen += dt) > 16 + this.stars * 6) this.clear('✅ You lost the police.');
-      if ((this.sirenT = (this.sirenT || 0) - dt) <= 0 && nearest < 200) { this.sirenT = 0.72; sfx.siren && sfx.siren(Math.max(0.05, 1 - nearest / 200)); }
+      this.sirenVol = nearest < 320 ? Math.max(0.06, 1 - nearest / 320) : 0; this.sirenYelp = nearest < 60;
     }
   }
   // ---------------------------------------------------------------- every frame
@@ -414,5 +414,6 @@ export class Crime {
     // heat cools slowly while nothing new happens (never below the current star until the police lose you)
     if (this.stars === 0 && this.heat > 0) this.heat = Math.max(0, this.heat - dt * 0.03);
     this.updateUnits(dt);
+    if (sfx.sirenSet) sfx.sirenSet(this.stars > 0 && !this.g.paused && !document.hidden ? (this.sirenVol || 0) : 0, !!this.sirenYelp);
   }
 }

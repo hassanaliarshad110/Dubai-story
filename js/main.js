@@ -66,6 +66,7 @@ import { Billboards, loadBillboards, dubaiBoards } from './billboards.js?v=11112
 import { BurjShow } from './burjshow.js?v=11112231';
 import { VideoWall } from './videowall.js?v=11112231';
 import { DubaiMissions } from './dxbmissions.js?v=11112231';
+import { DubaiFun, addDubaiPlaces } from './dxbfun.js?v=11112231';
 import { Navigator, loadRoute } from './route.js?v=11112231';
 import { setHalloweenNight } from './halloween.js?v=11112231';
 import { setCarLightsNight } from './carlights.js?v=11112231';
@@ -211,11 +212,12 @@ async function boot() {
   game.metro = new Metro(game, { toast, setPrompt, sfx }); game.music = music;
   if (!game.photoOn) game.platforms = buildPlatforms(scene, world, transit);       // a platform to stand on at every CTrain station
   game.buses = new Buses(game, { toast, setPrompt, sfx });
-  game.signals = new Signals(scene, traffic, { radius: mobile ? 180 : 260 }); game.billboards = new Billboards(scene, DXB ? dubaiBoards(world, (x, y) => tiles.roofAt(x, y)) : null); if (DXB) { game.burj = new BurjShow(game, scene, world); game.videowall = new VideoWall(game, camera, game.billboards.items); game.dxm = new DubaiMissions(game, scene, world); } if (world.addr) game.numbers = new HouseNumbers(scene, tiles, { radius: 1 });
+  game.signals = new Signals(scene, traffic, { radius: mobile ? 180 : 260 }); game.billboards = new Billboards(scene, DXB ? dubaiBoards(world, (x, y) => tiles.roofAt(x, y)) : null); if (DXB) { game.burj = new BurjShow(game, scene, world); game.videowall = new VideoWall(game, camera, game.billboards.items); addDubaiPlaces(world); game.dxm = new DubaiMissions(game, scene, world); game.fun = new DubaiFun(game, scene, world, tiles); } if (world.addr) game.numbers = new HouseNumbers(scene, tiles, { radius: 1 });
   initHealth(game); game.sfx = sfx; traffic.onHitPlayer = (v, nx, ny) => hurt(Math.min(100, 10 + v * 4), nx, ny, 'car');
   game.mp = new Multiplayer(game, scene);       // play online: other players, chat and voice near you
   game.games = new Games(game, scene); game.games.show(false);
   if (!game.photoOn && !DXB) { game.life = new Life(game, scene, { mobile }); setTimeout(() => ['kid_boy', 'kid_girl', 'kid_boy2'].forEach(loadHuman), 8000); }     // children playing, rabbits and the odd bear in the parks
+  if (DXB) { fetch('audio/radio.json').then(r => r.json()).then(l => { music.playlist(l); music.onTrack = t => { if (player.mode === 'car' || player.mode === 'heli') toast(`📻 Aflatoon FM · ${t.title}`); }; }).catch(() => { }); }
   if (DXB) { game.people = new People(scene, tiles, { max: mobile ? 14 : 26, maxDowntown: mobile ? 14 : 26, camps: false }); game.crime = new Crime(game, scene); }
   if (!DXB) game.people = new People(scene, tiles, { max: Math.round((mobile ? 8 : 16) * QP().crowd), maxDowntown: Math.round((mobile ? 18 : 40) * QP().crowd) });
   initHUD(world, game); initPhone(game); initRealView(game); initInput(canvas);
@@ -599,6 +601,7 @@ function loop(now) {
     if (game.games && game.mode === 'free' && !game.dubai) game.games.update(dt);
     if (game.crime && !blocked) game.crime.update(dt);
     if (game.dxm && !blocked) game.dxm.update(dt);
+    if (game.fun && !blocked) game.fun.update(dt);
     let near = 0; for (const c of traffic.cars) if (!c.parked && Math.abs(c.x - player.x) < 120 && Math.abs(c.y - player.y) < 120) near++;
     const radio = player.mode === 'car' || player.mode === 'heli';
     updateAudio(dt, { driving: player.mode === 'car' && !blocked, bike: player.onBike, speed: player.v, throttle: Math.max(0, inp.y), day: game.day ?? 1, cars: near, foot: player.mode === 'foot', heli: player.mode === 'heli', rotor: game.heli ? game.heli.rot : 0, radio });

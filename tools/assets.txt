@@ -14,3 +14,8 @@ audio/radio/a4.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqf
 audio/radio/a5.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/bda72f45-1cfd-4179-b2f3-17d263c85374.mp3
 audio/radio/a6.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/84c49243-e85f-4ac2-8dee-5f2cdc87459a.mp3
 audio/radio/a7.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/c8e8935b-aefc-4ccf-b916-bb7348cc7338.mp3
+data/veh/dxb_patrol2.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_233229_8c756ebd-feec-488f-a70e-b0cae3bc6029.glb
+data/veh/dxb_tiida17.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_233823_d83d4d41-3c26-4dad-a53c-09050feb1c2b.glb
+data/veh/dxb_jeep.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234353_1f6d441e-c0a8-47e2-8749-e147008e08a6.glb
+data/veh/dxb_sentra.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234355_386aa089-a6b9-4f66-846d-2d3d9413d5b5.glb
+data/veh/dxb_lexus.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234357_cfe95949-a584-4917-b73e-0c4c4a868967.glb

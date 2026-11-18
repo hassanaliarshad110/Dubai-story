@@ -216,8 +216,7 @@ function appSettings() {
     ${game.dubai ? '' : `<div class="p-h">Halloween decorations</div><div class="chips"><button class="chip${HALLOWEEN.on ? ' on' : ''}" data-hw="1">On</button><button class="chip${!HALLOWEEN.on ? ' on' : ''}" data-hw="0">Off</button></div>`}
     <div class="p-h">Engine volume</div><div class="chips">${[['0', 'Off'], ['0.5', 'Quiet'], ['1', 'Normal']].map(([v, t]) => `<button class="chip${String(engineVolume()) === v ? ' on' : ''}" data-ev="${v}">${t}</button>`).join('')}</div>
     <div class="p-h">Time of day</div><div class="chips">${[['8', 'Morning'], ['13', 'Afternoon'], ['18.5', 'Evening'], ['22', 'Night']].map(([v, t]) => `<button class="chip" data-t="${v}">${t}</button>`).join('')}</div>
-    ${game.dubai ? `<div class="p-h">Real 3D Dubai (Google)</div><div class="chips"><button class="chip${game.photo ? ' on' : ''}" data-r3="1">On</button><button class="chip${!game.photo ? ' on' : ''}" data-r3="0">Off (map-drawn city)</button></div>
-    <p style="font-size:12px;color:#5b6573;margin-top:-4px">Real buildings and streets from Google's 3D map. Needs a good connection; changing it restarts the game.</p>` : `<button class="p-btn alt" id="s-reset">Start the story again</button>`}
+    ${game.dubai ? '' : `<button class="p-btn alt" id="s-reset">Start the story again</button>`}
     <p style="font-size:12px;color:#5b6573;margin-top:16px"><b>${game.dubai ? 'Dubai City Stories' : 'YYC City Stories'}</b> · A game by Hassan Ali<br>${game.world.credits.data.map(esc).join('<br>')}<br>Map data downloaded ${esc((game.world.osm_date || '').slice(0, 10))}.</p>`);
   const b = $('.phone-body');
   b.querySelectorAll('[data-q]').forEach(x => x.onclick = () => { game.setQuality(x.dataset.q); appSettings(); });

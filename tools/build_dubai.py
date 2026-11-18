@@ -395,6 +395,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default=os.path.join(HERE, '..', 'data'))
     ap.add_argument('--cache', default=os.path.join(HERE, '..', '.cache'))
+    ap.add_argument('--trees', help='tree points (JSON [[x, y], ...]) from ESA WorldCover, made by worldcover_trees.py')
     ap.add_argument('--overture', help='Overture Maps buildings (GeoJSON) to fill in buildings OpenStreetMap is missing')
     ap.add_argument('--osm-json', help='read OSM data from this file (made by pbf_to_json.py) instead of the Overpass API')
     args = ap.parse_args()
@@ -457,6 +458,7 @@ def main():
         return pts, zs
 
     overview, ctrl, streets = [], [], {}
+    road_polys = []      # road surfaces, to keep satellite trees off the roads
     for w, typ in linear:
         t = w['tags']; pts, zs = heights(w, typ)
         if len(pts) < 2 or not inside(LineString(pts)): continue
@@ -468,6 +470,7 @@ def main():
             k = ROAD[t['highway']]; ow = oneway(t, t['highway'])
             if ow == -1: pts = pts[::-1]; zs = zs[::-1] if zs else zs
             wdt = road_width(k, t, ow)
+            if not tunnel: road_polys.append(LineString(pts).buffer(wdt / 2 + 1.5, cap_style=2))
             T.line(L_ROAD, k, (1 if ow else 0) | tunnel, wdt * 10, 8 + max(-8, min(7, layer)), nm, pts, zs)
             if k in (1, 2, 3, 4, 5, 6, 8, 9, 10) and not tunnel:
                 overview.append({'c': k, 'n': nm, 'p': [[round(x), round(y)] for x, y in pts]})
@@ -698,6 +701,25 @@ def main():
             ring = [(x - ox, y - oy, 0) for x, y in list(p.exterior.coords)[:-1]]
             if len(ring) >= 3:
                 T.add(ix, iy, L_BLD, kk, fl, h * 10, mh * 10, name_of(t), [ring]); stats['building'] += 1
+
+    # ---- trees seen from space (ESA WorldCover tree cover, 10 m): off the roads and out of the buildings
+    if args.trees and os.path.exists(args.trees):
+        import numpy as np, shapely
+        from shapely.strtree import STRtree as _ST3
+        pts = np.array(json.load(open(args.trees)), dtype=float)
+        if len(pts):
+            P_ = shapely.points(pts)
+            keep = shapely.contains_xy(extent, pts[:, 0], pts[:, 1])
+            blocks = road_polys + [g for g, t, p in bld]
+            if blocks:
+                hit = _ST3(blocks).query(P_, predicate='intersects')[0]
+                keep[hit] = False
+            rng = np.random.default_rng(11)
+            for (x, y), k in zip(pts, keep):
+                if not k: continue
+                h = rng.uniform(5.5, 10.5)
+                T.point(L_TREE, 3, 0, h * 10, rng.uniform(2.2, 3.6) * 10, None, x, y); stats['tree_sat'] += 1
+        print('satellite trees placed:', stats['tree_sat'])
 
     # ---- points: trees, stops, signals, places
     places, areas = [], []

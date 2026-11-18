@@ -1226,14 +1226,14 @@ export class TileManager {
     const g = new THREE.Group(); g.position.set(ox, 0, -oy); g.name = 'tile ' + job.k;
     // between steps: the tile may have been unloaded meanwhile (then drop the half-built one), and other code may have moved TER
     const gone = () => { if (this.tiles.get(job.k) === entry) { TER.ox = ox; TER.oy = oy; return false; } g.traverse(o => { if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose(); }); return true; };
-    if (this.meshes && TER.on) {
+    if (this.meshes && (TER.on || S2.on)) {
       const gg = groundGrid(this.TS, lite ? 25 : 12.5);
       if (gg) {
         let mat = MAT.base;
         if (S2.on) {       // the real ground colours from the satellite, with the fine texture on top
           const rx = Math.floor(ox / S2.rg), ry = Math.floor(oy / S2.rg), uv = gg.attributes.position, U = gg.attributes.uv;
           for (let i = 0; i < uv.count; i++) U.setXY(i, (ox + uv.getX(i) - rx * S2.rg) / S2.rg, (oy - uv.getZ(i) - ry * S2.rg) / S2.rg);
-          mat = s2Material(rx, ry, !lite);      // up close: half lawn green, half satellite, so yards stay green
+          mat = s2Material(rx, ry, !lite && !STYLE.dubai);      // Dubai: the satellite as it is, no lawn green mixed in      // up close: half lawn green, half satellite, so yards stay green
         }
         const m = new THREE.Mesh(gg, mat); m.receiveShadow = !lite; g.add(m);
       }
@@ -1241,7 +1241,8 @@ export class TileManager {
     const M = this.meshes, D = M && !lite;       // D: street furniture and details, only on full tiles
     const add = (geo, mat, opts = {}) => { if (!geo || !M) return null; const m = new THREE.Mesh(geo, mat); m.receiveShadow = opts.rs ?? true; m.castShadow = opts.cs ?? false; if (opts.ro != null) m.renderOrder = opts.ro; g.add(m); return m; };
     // ground cover
-    if (M && layers[L.AREA]) add(buildFlat(layers[L.AREA].sort((a, b) => a.flags - b.flags), f => AREA_COL[f.kind], f => AREA_Y(f.kind)), MAT.ground, { ro: 1 });
+    const AREA_HIDE = STYLE.dubai && S2.on ? new Set([1, 2, 3, 4, 5, 6, 9, 16, 18, 19, 24, 25]) : null;     // Dubai: the satellite shows land use; keep pitches, parking, plazas, pools
+    if (M && layers[L.AREA]) add(buildFlat(layers[L.AREA].filter(f => !AREA_HIDE || !AREA_HIDE.has(f.kind)).sort((a, b) => a.flags - b.flags), f => AREA_COL[f.kind], f => AREA_Y(f.kind)), MAT.ground, { ro: 1 });
     if (M && layers[L.WATER]) add(buildFlat(layers[L.WATER], () => 0x5d8fb8, () => 0.08), MAT.water, { ro: 2 });
     if (M && layers[L.WWAY]) add(buildRibbons(layers[L.WWAY], 0.085, f => f.a / 10, 0x5d8fb8), MAT.waterFlat, { ro: 2 });
     yield; if (gone()) return;

@@ -16,6 +16,7 @@ export function angDiff(a, b) { let d = (b - a) % (Math.PI * 2); if (d > Math.PI
 export const LOOKS = {
   ayaan: { name: 'Ayaan', hero: true, skin: 0xb07a52, shirt: 0x1f6fd1, pants: 0x2a2e38, hair: 0x15100d, bag: 0x333333 },
   zara: { name: 'Zara', skin: 0xb98260, shirt: 0xc8326b, pants: 0x283044, hair: 0x15100d, long: true, fem: true, bag: 0x5a3a7a, scale: 0.95 },
+  kandura: { glb: 'kandura', name: 'Ali', hero: true, skin: 0xb98260, shirt: 0xf4f4f0, pants: 0xf4f4f0, hair: 0x15100d },
   ali: { glb: 'ali', name: 'Ali', hero: true, skin: 0xb07a52, shirt: 0x1f6fd1, pants: 0x2a2e38, hair: 0x15100d },
   natalia: { glb: 'natalia', hero: true, name: 'Natalia', skin: 0xd9a77e, shirt: 0x7a3fa0, pants: 0x2b3a55, hair: 0x4a2e1a, long: true, fem: true, bag: 0xd0453a, scale: 0.92 },
   chris: { glb: 'chris', hero: true, name: 'Chris', skin: 0xe0b896, shirt: 0x6b5a46, pants: 0x4a4e57, hair: 0xd2d0cc, shoe: 0x3a2a20, scale: 0.97 },

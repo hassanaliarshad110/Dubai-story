@@ -63,6 +63,8 @@ export function loadHuman(name) {
   })());
   return PENDING.get(name);
 }
+// Dubai: men in kandura and ghutra on the streets instead of cowboys
+export function useDubaiCast() { const i = NPCS.indexOf('npc_cowboy'); if (i >= 0) NPCS.splice(i, 1, 'kandura'); if (!MAIN.includes('kandura')) MAIN.push('kandura'); NPCS.push('kandura'); }
 export const humanReady = name => MODELS.has(name) && !!CLIPS;
 // load the main characters first, then the people on the street, without holding up the game
 export async function loadHumans(first = []) {

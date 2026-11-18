@@ -15,7 +15,7 @@ import { initRealView, openReal, closeReal, realOpen } from './realview.js?v=111
 import { initInput, readInput, input, onAction } from './input.js?v=11112231';
 import { makeCar } from './actors.js?v=11112231';
 import { loadHero } from './rig.js?v=11112231';
-import { loadHumans, humanReady, loadHuman, VIEW } from './humans.js?v=11112231';
+import { loadHumans, humanReady, loadHuman, VIEW, useDubaiCast } from './humans.js?v=11112231';
 import { loadHouses, loadCityHall, updateHouses, setHouseRange, LM_NIGHT, updateLandmarks, landmarkRoofAt } from './houses3d.js?v=11112231';
 import { ROOF_EXTRA } from './tiles.js?v=11112231';
 ROOF_EXTRA.fn = landmarkRoofAt;
@@ -58,7 +58,7 @@ import { Metro } from './metro.js?v=11112231';
 import { Buses } from './buses.js?v=11112231';
 import { Signals, loadSigns } from './signals.js?v=11112231';
 import { HouseNumbers } from './numbers.js?v=11112231';
-import { People } from './people.js?v=11112231';
+import { People, dubaiLooks } from './people.js?v=11112231';
 import { initIntro } from './intro.js?v=11112231';
 import { CHARACTERS } from './stories.js?v=11112231';
 import { tr } from './i18n.js?v=11112231';
@@ -191,6 +191,7 @@ async function boot() {
   WARM.fn = obj => { obj.position.set(camera.position.x, -500, camera.position.z); obj.traverse(o => { o.frustumCulled = false; }); scene.add(obj);
     const done = () => scene.remove(obj); try { renderer.compileAsync(obj, camera, scene).then(done, done); } catch (e) { done(); } };
   // realistic people and homes arrive in the background; until then the simpler ones stand in
+  if (DXB) { useDubaiCast(); dubaiLooks(); }
   loadHumans([(LOOKS[game.look] || {}).glb].filter(Boolean));
   if (!game.photoOn && !DXB) { if (mobile) setHouseRange(110); loadHouses(tiles); loadCityHall(scene); }
   loadCars3D();

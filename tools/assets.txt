@@ -1,23 +1,11 @@
 # path url  (models made for the game; fetched once into the repo)
 data/veh/dxb_suv.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_232036_a7b14da9-1aed-4452-b166-c91c73be5c8f.glb
-data/veh/dxb_patrol.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_232658_5b4921f7-da5e-4fcc-876e-faa72398e74f.glb
-data/veh/dxb_tiida.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_232700_747ccedd-ce44-4548-a6e0-423dd1fd780b.glb
 data/veh/dxb_yaris.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_232701_b38da547-0c1c-42c9-b818-f73a6fc1ac08.glb
 data/veh/dxb_lambo.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_232702_97ebd38f-4bbb-4de8-823b-afa1d16b978d.glb
 data/veh/dxb_ferrari.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_232704_6e76679a-1966-46a0-9074-f5fd9417cef3.glb
-data/models/opus.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_232705_b6e5b5ac-239e-4412-a40b-ba575d1bec37.glb
 data/models/villa27c.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_232708_1712f2e9-212d-4922-8e20-3f71262f9359.glb
-audio/radio/a1.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/0adbf02e-7a6e-43a2-94ac-ec61791a7e88.mp3
-audio/radio/a2.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/371a3c9c-4fa9-4808-b3c5-94caa618f8dc.mp3
-audio/radio/a3.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/bd27788c-87c6-4bb5-ac8a-a575aa1a30a8.mp3
-audio/radio/a4.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/b2968bc7-d13a-499d-98ed-e792bc9e3acb.mp3
-audio/radio/a5.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/bda72f45-1cfd-4179-b2f3-17d263c85374.mp3
-audio/radio/a6.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/84c49243-e85f-4ac2-8dee-5f2cdc87459a.mp3
-audio/radio/a7.mp3 https://d2ol7oe51mr4n9.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/c8e8935b-aefc-4ccf-b916-bb7348cc7338.mp3
 data/veh/dxb_patrol2.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_233229_8c756ebd-feec-488f-a70e-b0cae3bc6029.glb
 data/veh/dxb_tiida17.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_233823_d83d4d41-3c26-4dad-a53c-09050feb1c2b.glb
 data/veh/dxb_jeep.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234353_1f6d441e-c0a8-47e2-8749-e147008e08a6.glb
 data/veh/dxb_sentra.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234355_386aa089-a6b9-4f66-846d-2d3d9413d5b5.glb
 data/veh/dxb_lexus.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234357_cfe95949-a584-4917-b73e-0c4c4a868967.glb
-data/chars/kandura.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234540_f01f72bd-fb02-469e-b351-7ff9784ce008.glb
-data/chars/kandura_src.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_234422_07b0bded-9061-457e-a63d-9bf53bc986a1.glb

@@ -1,0 +1,34 @@
+name: Build the Dubai map
+# builds data/world.json and the 500 m tile packs from OpenStreetMap for the phases enabled in tools/phases.json
+on:
+  push:
+    branches: [main]
+    paths: ['tools/build_dubai.py', 'tools/phases.json', '.github/workflows/build-map.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: build-map
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install shapely==2.0.6
+      - uses: actions/cache@v4
+        with:
+          path: .cache
+          key: osm-${{ hashFiles('tools/phases.json') }}-${{ github.run_id }}
+          restore-keys: osm-${{ hashFiles('tools/phases.json') }}-
+      - run: python tools/build_dubai.py --out data --cache .cache
+      - name: Commit the map
+        run: |
+          git config user.name "Hassan Ali"
+          git config user.email "hassanaliarshad110@users.noreply.github.com"
+          git add -A data/world.json data/build-report.json data/p
+          git diff --cached --quiet || (git commit -qm "Dubai map: rebuild tiles from OpenStreetMap" && git pull -q --rebase && git push -q)

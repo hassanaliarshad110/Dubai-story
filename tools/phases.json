@@ -1,0 +1,28 @@
+{
+  "origin": { "name": "Al Garhoud", "lat": 25.2440, "lon": 55.3400 },
+  "tile_size": 500,
+  "pack": 8,
+  "phases": [
+    {
+      "id": 1,
+      "name": "Garhoud + DXB",
+      "areas": "Al Garhoud, Dubai International Airport, Port Saeed, Deira City Centre, Dubai Festival City, Umm Ramool, Rashidiya",
+      "bbox": [55.315, 25.205, 55.400, 25.270],
+      "enabled": true
+    },
+    {
+      "id": 2,
+      "name": "To the Sharjah border",
+      "areas": "Deira, Al Mamzar, Al Qusais, Al Nahda, Muhaisnah, Al Twar",
+      "bbox": [55.290, 25.255, 55.430, 25.320],
+      "enabled": false
+    },
+    {
+      "id": 3,
+      "name": "Creek to Downtown",
+      "areas": "Al Jaddaf, Oud Metha, Karama, Bur Dubai, Zabeel, DIFC, Business Bay, Downtown",
+      "bbox": [55.255, 25.180, 55.335, 25.270],
+      "enabled": false
+    }
+  ]
+}

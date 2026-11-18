@@ -16,6 +16,17 @@ function tex(c, rep = true) {
 export function facadeTexture(kind) {
   const [c, g] = canvas(64, 64);
   g.fillStyle = '#e6e6e6'; g.fillRect(0, 0, 64, 64);
+  if (kind.startsWith('villa')) {       // Dubai villas (tinted cream, sand or terracotta by the vertex colour): arched windows with a white arch infill, a breeze-block band or a tiled eave on top
+    const n = +kind.slice(5) || 0; g.fillStyle = '#f6f1e6'; g.fillRect(0, 0, 64, 64);
+    for (let i = 0; i < 160; i++) { g.fillStyle = Math.random() < 0.5 ? 'rgba(0,0,0,0.035)' : 'rgba(255,255,255,0.08)'; g.fillRect(Math.random() * 64, Math.random() * 64, 2, 2); }
+    if (n !== 3) { g.fillStyle = '#ffffff'; g.beginPath(); g.arc(32, 30, 11, Math.PI, 0); g.fill(); g.fillRect(21, 30, 22, 6); g.fillStyle = '#3d4a52'; g.fillRect(22, 36, 20, 14); g.fillStyle = '#e9e9e4'; g.fillRect(31, 36, 2, 14); g.fillRect(21, 50, 22, 2); g.fillStyle = 'rgba(255,255,255,0.2)'; g.fillRect(23, 37, 6, 12); }
+    else { g.fillStyle = '#3d4a52'; g.fillRect(18, 26, 28, 22); g.fillStyle = '#ffffff'; g.fillRect(16, 24, 32, 2); g.fillRect(16, 48, 32, 3); g.fillRect(31, 26, 2, 22); }
+    if (n === 0 || n === 3) { g.fillStyle = '#ffffff'; g.fillRect(0, 2, 64, 13); g.fillStyle = '#b9b3a6'; for (let y = 4; y < 14; y += 4) for (let x = 2 + (y % 8 ? 2 : 0); x < 64; x += 4) g.fillRect(x, y, 2, 2); }      // perforated breeze-block parapet
+    else if (n === 2) { g.fillStyle = '#b5543a'; g.fillRect(0, 0, 64, 9); g.fillStyle = '#8f3f2b'; for (let x = 0; x < 64; x += 4) g.fillRect(x, 0, 1, 9); g.fillStyle = '#ffffff'; g.fillRect(0, 9, 64, 2); }                       // terracotta tiled eave
+    else { g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 4); }
+    g.fillStyle = 'rgba(0,0,0,0.10)'; g.fillRect(0, 60, 64, 4);
+    return tex(c);
+  }
   if (kind === 'glass') {               // Dubai: a bright glass curtain wall (tinted per tower by its vertex colour): two panes a bay, a spandrel band at each floor
     const [c2, g2] = canvas(128, 128), gr = g2.createLinearGradient(0, 0, 0, 128);
     gr.addColorStop(0, '#f4fbff'); gr.addColorStop(0.55, '#d3e3ee'); gr.addColorStop(1, '#b9cedc'); g2.fillStyle = gr; g2.fillRect(0, 0, 128, 128);

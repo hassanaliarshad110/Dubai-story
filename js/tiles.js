@@ -155,9 +155,9 @@ const KCOL = {   // building wall tints by kind (houses: the vinyl siding colour
 };
 KCOL[18] = KCOL[1]; KCOL[19] = KCOL[1];
 const KCOL_DXB = {   // villas and low-rise in sand, cream and white stone; towers in glass and silver
-  1: [0xe9dcc1, 0xf2ead8, 0xdcc8a4, 0xf6f3ea, 0xe3d2b0, 0xd9c4a0, 0xefe6d2], 2: [0xe2d5bb], 3: [0xe6e0d4, 0xd8cfbf, 0xc9d3da], 4: [0xeee6d6, 0xe2d6bf, 0xf4f1ea, 0xd6cbb6, 0xcfd6db],
+  1: [0xead9b0, 0xf0e2c0, 0xe2cfa2, 0xf4efe2, 0xd9a98a, 0xe8d4a8, 0xc98e6e, 0xefe3c6], 2: [0xe2d5bb], 3: [0xe6e0d4, 0xd8cfbf, 0xc9d3da], 4: [0xeee6d6, 0xe2d6bf, 0xf4f1ea, 0xd6cbb6, 0xcfd6db],
   5: [0xd9d3c6, 0xc9c4b9, 0xe4e0d8], 6: [0xeadfca, 0xddd0b6], 7: [0xe8dcc4, 0xd8c9ab], 8: [0xf3efe6, 0xeae2d0], 9: [0xe6dcc8], 10: [0xcfcac0], 11: [0xe6e6e2], 12: [0xf0eee8],
-  13: [0xd8d2c4], 14: [0xe5dac4, 0xd9ccb2, 0xefe8da], 15: [0x6fa8d6, 0x4f9fb5, 0x8fc0dd, 0x5e86b8, 0xbfd6e2, 0x6fb5a0, 0xc9a56a, 0x3f6690, 0x9ad0e6, 0x7aa0c0], 16: [0xd9c9a4], 17: [0xe9e6df], 18: [0xe9dcc1, 0xf2ead8], 19: [0xe9dcc1, 0xdcc8a4]
+  13: [0xd8d2c4], 14: [0xead9b0, 0xe2cfa2, 0xf1ead8, 0xd9b99a], 15: [0x6fa8d6, 0x4f9fb5, 0x8fc0dd, 0x5e86b8, 0xbfd6e2, 0x6fb5a0, 0xc9a56a, 0x3f6690, 0x9ad0e6, 0x7aa0c0], 16: [0xd9c9a4], 17: [0xe9e6df], 18: [0xe9dcc1, 0xf2ead8], 19: [0xe9dcc1, 0xdcc8a4]
 };
 const ROOF = { 1: [0x5a5550, 0x4a4643, 0x6b5a4c, 0x3f4245, 0x705f52, 0x2f3236, 0x7a6a5a, 0x4f5a4e, 0x8a5a44, 0x3d3a37], 2: [0x5a5550, 0x4a4643, 0x6b5a4c], 4: [0x6d6a66, 0x5b5754, 0x4a4643] };
 function pick(arr, h) { return arr[Math.floor(h * arr.length) % arr.length]; }
@@ -166,7 +166,7 @@ function hash2(x, y) { const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
 // house cladding by the year it was built (from the property assessment roll): 0 siding, 1 brick, 2 stucco, 3 stone accents
 const ERA_STYLE = { 1: [2, 2, 2, 0, 0], 2: [1, 1, 2, 2, 2, 0], 3: [0, 0, 0, 0, 2, 2, 3], 4: [3, 3, 3, 0, 0] };
 function wallGroup(k, h, hs, era) {
-  if (STYLE.dubai) { if (k === 15 || h > 26 || k === 17 || (k === 3 && h > 14)) return 'tower'; if (k === 6 && h < 9) return 'shop'; return (k === 1 || k === 2 || k === 18 || k === 19) && h < 5 ? 'comm' : (k === 3 || k === 5 || k === 9 || k === 10 || k === 13 || k === 14) ? 'comm' : 'apt'; }
+  if (STYLE.dubai) { if (k === 15 || h > 26 || k === 17 || (k === 3 && h > 14)) return 'tower'; if (k === 6 && h < 9) return 'shop'; if (k === 1 || k === 18 || k === 19 || (k === 14 && h < 9)) return 'house' + Math.floor(hs * 977) % 4; return (k === 1 || k === 2 || k === 18 || k === 19) && h < 5 ? 'comm' : (k === 3 || k === 5 || k === 9 || k === 10 || k === 13 || k === 14) ? 'comm' : 'apt'; }
   if (k === 15 || (k === 3 && h > 25) || (k === 4 && h > 30) || k === 17) return 'tower';
   if (k === 4) return 'apt';
   if (k === 6 && h < 9) return 'shop';
@@ -508,17 +508,19 @@ function quad(G, a, b, y0, y1, nx, nz, u0, u1, c, off = 0.03) {        // vertic
   G.idx.push(i0, i1, i2, i0, i2, i3);
 }
 // boundary walls, fences and hedges (L.BARR): kind 1 fence, 2 wall, 3 hedge, 4 retaining wall
-const BARR = { 1: [1.7, 0.08, 0x6e737a], 2: [2.2, 0.26, 0xe6dcc6], 3: [1.3, 0.8, 0x4f7a3a], 4: [1.4, 0.35, 0xb9b2a4] };
+const COPING_C = new THREE.Color(0xfaf8f2);
+const BARR = { 1: [1.7, 0.08, 0x6e737a], 2: [2.1, 0.26, 0xe9d9ae], 3: [1.3, 0.8, 0x4f7a3a], 4: [1.4, 0.35, 0xb9b2a4] };
 function buildWalls(feats) {
   const G = new GeoBuilder(), c = new THREE.Color();
   for (const f of feats) {
     const B = BARR[f.kind] || BARR[2], r = f.rings[0], n = r.length / 2, hgt = B[0], th = B[1] / 2; if (n < 2) continue;
     c.setHex(B[2]); if (f.kind === 2) { const k = 0.9 + hash2(r[0], r[1]) * 0.14; c.multiplyScalar(k); }
-    const cc = c.clone(), top = cc.clone().multiplyScalar(0.93);
+    const cc = c.clone(), top = f.kind === 2 ? COPING_C : cc.clone().multiplyScalar(0.93);
     for (let i = 1; i < n; i++) {
       const a = [r[i * 2 - 2], r[i * 2 - 1]], b = [r[i * 2], r[i * 2 + 1]], ex = b[0] - a[0], ey = b[1] - a[1], l = Math.hypot(ex, ey); if (l < 0.2) continue;
       const nx = ey / l, nz = ex / l;
-      quad(G, a, b, 0, hgt, nx, nz, 0, l / 3, cc, th); quad(G, b, a, 0, hgt, -nx, -nz, 0, l / 3, cc, th);
+      if (f.kind === 2) { const cp = hgt - 0.32; quad(G, a, b, 0, cp, nx, nz, 0, l / 3, cc, th); quad(G, b, a, 0, cp, -nx, -nz, 0, l / 3, cc, th); quad(G, a, b, cp, hgt, nx, nz, 0, l / 3, COPING_C, th + 0.03); quad(G, b, a, cp, hgt, -nx, -nz, 0, l / 3, COPING_C, th + 0.03); }
+      else { quad(G, a, b, 0, hgt, nx, nz, 0, l / 3, cc, th); quad(G, b, a, 0, hgt, -nx, -nz, 0, l / 3, cc, th); }
       const ox = nx * th, oy = -nz * th, base = G.n;        // (nx, nz) in three's x/z is (nx, -nz) on the map
       G.v(a[0] + ox, hgt, -(a[1] + oy), 0, 1, 0, 0, 0, top); G.v(b[0] + ox, hgt, -(b[1] + oy), 0, 1, 0, 0, 0, top); G.v(b[0] - ox, hgt, -(b[1] - oy), 0, 1, 0, 0, 0, top); G.v(a[0] - ox, hgt, -(a[1] - oy), 0, 1, 0, 0, 0, top);
       G.idx.push(base, base + 1, base + 2, base, base + 2, base + 3, base, base + 2, base + 1, base, base + 3, base + 2);

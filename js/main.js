@@ -163,6 +163,7 @@ async function boot() {
       sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uSheen;').replace('#include <dithering_fragment>', `#include <dithering_fragment>
         { float fr = 1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))); gl_FragColor.rgb += vec3(0.50, 0.68, 0.88) * (0.10 + 0.55 * fr * fr) * uSheen; }`); };
     gm.customProgramCacheKey = () => 'dxbglass'; gm.needsUpdate = true;
+    for (let i = 0; i < 4; i++) { const t = facadeTexture('villa' + i); MAT.wallHouses[i].map = t; MAT.wallHouses[i].userData.glow = 0.35; if (MAT.wallHousesSwap && MAT.wallHousesSwap[i]) MAT.wallHousesSwap[i].map = t; }      // Gulf villas: arched windows, breeze-block parapets, tiled eaves
     await loadSatColours(world);
   }
   status('Shaping the hills…'); await loadTerrain();

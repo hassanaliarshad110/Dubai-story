@@ -57,15 +57,21 @@ function adTexture(i) {
 // one board about every 500 m along the motorways and main roads, on the right of the traffic and facing it
 export function dubaiBoards(world, roofAt) {
   const out = [], G = new Map(), far = (x, y) => { const k = Math.floor(x / 350) + ',' + Math.floor(y / 350); if (G.has(k)) return false; G.set(k, 1); return true; };
+  // every road's centre line in a 24 m grid, so a board never lands on another carriageway
+  const RG = new Map(), put = (x, y) => { const k = Math.floor(x / 24) + ',' + Math.floor(y / 24); let l = RG.get(k); if (!l) RG.set(k, l = []); l.push(x, y); };
+  for (const r of world.overview || []) for (let i = 1; i < r.p.length; i++) { const a = r.p[i - 1], b = r.p[i], l = Math.hypot(b[0] - a[0], b[1] - a[1]), st = Math.max(1, Math.ceil(l / 8)); for (let s = 0; s <= st; s++) put(a[0] + (b[0] - a[0]) * s / st, a[1] + (b[1] - a[1]) * s / st); }
+  const clear = (x, y, R) => { for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const l = RG.get((Math.floor(x / 24) + i) + ',' + (Math.floor(y / 24) + j)); if (l) for (let k = 0; k < l.length; k += 2) if (Math.hypot(l[k] - x, l[k + 1] - y) < R) return false; } return true; };
   let n = 0;
   for (const r of world.overview || []) {
     if (![1, 2, 3].includes(r.c) || r.p.length < 2) continue; let acc = 180 + (n * 97) % 240;
     for (let i = 1; i < r.p.length; i++) {
       const a = r.p[i - 1], b = r.p[i], l = Math.hypot(b[0] - a[0], b[1] - a[1]); if (l < 1) continue; acc += l;
       if (acc < 520) continue; acc = 0;
-      const dx = (b[0] - a[0]) / l, dy = (b[1] - a[1]) / l, off = (r.c === 1 ? 17 : 12), x = (a[0] + b[0]) / 2 + dy * off, y = (a[1] + b[1]) / 2 - dx * off;
+      const dx = (b[0] - a[0]) / l, dy = (b[1] - a[1]) / l; let x = null, y = null;
+      for (const off of [14, 19, 24, 30, 36]) { const qx = (a[0] + b[0]) / 2 + dy * off, qy = (a[1] + b[1]) / 2 - dx * off; if (clear(qx, qy, 11.5)) { x = qx; y = qy; break; } }
+      if (x == null) { acc = 400; continue; }
       if (!far(x, y)) continue;
-      const b = { x, y, h: Math.atan2(-dx, -dy), ad: (n * 5 + (n % 2 ? 0 : 3)) % ADS.length, roofAt }; if (n % 4 === 1) b.video = (n - 1) / 4; out.push(b); n++;      // every fourth is a video screen
+      const brd = { x, y, h: Math.atan2(-dx, -dy), ad: (n * 5 + (n % 2 ? 0 : 3)) % ADS.length, roofAt }; if (n % 4 === 1) brd.video = (n - 1) / 4; out.push(brd); n++;      // every fourth is a video screen
     }
   }
   return out;

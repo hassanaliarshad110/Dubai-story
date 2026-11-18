@@ -33,25 +33,31 @@ export class VideoWall {
   openBig() {
     const v = this.cur && this.videoFor(this.cur);
     if (!v) { window.open(this.channel, '_blank', 'noopener'); return; }
-    this.frame.hidden = true; this.frame.src = 'about:blank'; this.shown = null; this.g.paused = true;
+    this.stop(); this.g.paused = true;
     this.big.innerHTML = `<h3>${(v.title ? v.title + ' · ' : '') + (this.artist || 'Aflatoon')}</h3><iframe allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen src="https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&playsinline=1&rel=0"></iframe><div class="row"><a href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener">▶ Open on YouTube</a><button>✕ Back to the game</button></div>`;
     this.big.hidden = false; this.big.querySelector('button').onclick = () => { this.big.hidden = true; this.big.innerHTML = ''; this.g.paused = false; };
   }
+  say(func, args = []) { try { this.frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args }), '*'); } catch (e) { } }
+  stop() { if (this.shown) { this.shown = null; this.frame.src = 'about:blank'; } this.frame.style.opacity = '0'; this.frame.style.transform = 'translate(-9999px, 0)'; }
   update(dt, p) {
     if (!this.big.hidden) return;
-    // the nearest loaded screen you are standing in front of
-    let best = null, bd = 85;
-    for (const b of this.boards) { if (b.video == null || !b.face) continue; const dx = p.x - b.x, dy = p.y - b.y, d = Math.hypot(dx, dy); if (d > bd) continue; if ((dx * Math.sin(b.h) + dy * Math.cos(b.h)) / (d || 1) < 0.35) continue; best = b; bd = d; }
-    if (best !== this.cur) { this.cur = best; const v = best && this.videoFor(best); this.btn.hidden = !best; if (best) this.btn.textContent = v ? `▶ Watch${v.title ? ' “' + v.title + '”' : ''} · open on YouTube` : '▶ Aflatoon on YouTube'; }
+    // the nearest screen: you hear it from 250 m away (louder as you get closer), and see the video when you stand in front of it
+    let best = null, bd = 250;
+    for (const b of this.boards) { if (b.video == null || b.bad) continue; const d = Math.hypot(p.x - b.x, p.y - b.y); if (d < bd) { best = b; bd = d; } }
+    const front = best && best.face && bd < 90 && ((p.x - best.x) * Math.sin(best.h) + (p.y - best.y) * Math.cos(best.h)) / (bd || 1) > 0.35;
+    const near = front ? best : null;
+    if (near !== this.cur) { this.cur = near; const v = near && this.videoFor(near); this.btn.hidden = !near; if (near) this.btn.textContent = v ? `▶ Watch${v.title ? ' “' + v.title + '”' : ''} · open on YouTube` : '▶ Aflatoon on YouTube'; }
     const v = best && this.videoFor(best);
-    if (!v) { if (!this.frame.hidden) { this.frame.hidden = true; this.frame.src = 'about:blank'; this.shown = null; } return; }
-    if (this.shown !== best) { this.shown = best; this.frame.src = `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=${v.id}&rel=0&modestbranding=1`; }
+    if (!v) { this.stop(); return; }
+    if (this.shown !== best) { this.shown = best; this.volT = 0; this.frame.hidden = false; this.frame.src = `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&controls=0&playsinline=1&loop=1&playlist=${v.id}&rel=0&modestbranding=1&enablejsapi=1`; }
+    if ((this.volT -= dt) <= 0) { this.volT = 0.4; const k = Math.max(0, 1 - bd / 250), vol = Math.round(100 * k * k); this.say('unMute'); this.say('setVolume', [vol]); this.say('playVideo'); }
+    if (!front) { this.frame.style.opacity = '0'; this.frame.style.transform = 'translate(-9999px, 0)'; return; }
     // lay the player over the screen: project its four corners
     const m = best.face, hw = m.geometry.parameters.width / 2, hh = m.geometry.parameters.height / 2, pts = [], vw = innerWidth, vh = innerHeight, q = new THREE.Vector3(); let ok = true;
     m.updateWorldMatrix(true, false);
     for (const [x, y] of [[-hw, hh], [hw, hh], [hw, -hh], [-hw, -hh]]) { q.set(x, y, 0.02).applyMatrix4(m.matrixWorld).project(this.camera); if (q.z > 1 || q.z < -1) ok = false; pts.push([(q.x + 1) / 2 * vw, (1 - q.y) / 2 * vh]); }
     const area = Math.abs((pts[1][0] - pts[0][0]) * (pts[3][1] - pts[0][1]) - (pts[1][1] - pts[0][1]) * (pts[3][0] - pts[0][0]));
-    if (!ok || area < 900) { this.frame.hidden = true; return; }
-    this.frame.hidden = false; this.frame.style.transform = homography([[0, 0], [W, 0], [W, H], [0, H]], pts);
+    if (!ok || area < 900) { this.frame.style.opacity = '0'; this.frame.style.transform = 'translate(-9999px, 0)'; return; }
+    this.frame.style.opacity = '1'; this.frame.style.transform = homography([[0, 0], [W, 0], [W, H], [0, H]], pts);
   }
 }

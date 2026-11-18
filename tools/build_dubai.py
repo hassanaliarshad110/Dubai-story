@@ -622,6 +622,10 @@ def main():
         return [[[round(x, nd), round(y, nd)] for x, y in list(p.exterior.coords)[:-1]]] + \
                [[[round(x, nd), round(y, nd)] for x, y in list(h.coords)[:-1]] for h in p.interiors]
     bigo = []
+    wat = [b['g'] for b in big if b['k'] == 99]          # overlapping water (the sea and the Creek's own outline) as one shape,
+    if wat:                                                # so the map's even-odd fill doesn't cut holes in it
+        try: big = [b for b in big if b['k'] != 99] + [{'k': 99, 'n': None, 'g': unary_union([make_valid(g) for g in wat])}]
+        except Exception as ex: print('water union failed', ex)
     for b in big:
         for p in polys_of(b['g'].simplify(2.0)):
             if p.area > 1000: bigo.append({'k': b['k'], 'n': b['n'], 'rings': ring_out(p)})

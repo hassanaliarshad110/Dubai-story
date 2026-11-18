@@ -508,7 +508,7 @@ function quad(G, a, b, y0, y1, nx, nz, u0, u1, c, off = 0.03) {        // vertic
   G.idx.push(i0, i1, i2, i0, i2, i3);
 }
 // boundary walls, fences and hedges (L.BARR): kind 1 fence, 2 wall, 3 hedge, 4 retaining wall
-const COPING_C = new THREE.Color(0xfaf8f2), GATE_C = new THREE.Color(0xcdbb8c), GATE_SLAT_C = new THREE.Color(0x4a3b2a), BIN_C = new THREE.Color(0x3d4347), BIN_LID_C = new THREE.Color(0x2a2f33);
+const COPING_C = new THREE.Color(0xfaf8f2), GATE_C = new THREE.Color(0xd2bd8a), GATE_SLAT_C = new THREE.Color(0x3b2a1c), BIN_C = new THREE.Color(0x3d4347), BIN_LID_C = new THREE.Color(0x2a2f33);
 const BARR = { 1: [1.7, 0.08, 0x6e737a], 2: [2.1, 0.26, 0xe9d9ae], 3: [1.3, 0.8, 0x4f7a3a], 4: [1.4, 0.35, 0xb9b2a4] };
 function buildWalls(feats) {
   const G = new GeoBuilder(), c = new THREE.Color();
@@ -516,7 +516,10 @@ function buildWalls(feats) {
     if (f.kind === 5) {       // a gate: dark slatted panels between white posts, two wheelie bins outside on the street side
       const r5 = f.rings[0], a = [r5[0], r5[1]], b = [r5[r5.length - 2], r5[r5.length - 1]], ex = b[0] - a[0], ey = b[1] - a[1], l = Math.hypot(ex, ey); if (l < 1.5) continue;
       const nx = ey / l, nz = ex / l; quad(G, a, b, 0.08, 1.85, nx, nz, 0, l, GATE_C, 0.04); quad(G, b, a, 0.08, 1.85, -nx, -nz, 0, l, GATE_C, 0.04);
-      for (let s = 0.3; s < l; s += 0.3) { const p = [a[0] + ex / l * s, a[1] + ey / l * s], q = [p[0] + ex / l * 0.05, p[1] + ey / l * 0.05]; quad(G, p, q, 0.08, 1.85, nx, nz, 0, 1, GATE_SLAT_C, 0.06); quad(G, q, p, 0.08, 1.85, -nx, -nz, 0, 1, GATE_SLAT_C, 0.06); }
+      // as on 27C Street: sand-coloured vertical boards in a dark brown frame, a dark post between the two leaves
+      for (let s = 0.14; s < l; s += 0.14) { const p = [a[0] + ex / l * s, a[1] + ey / l * s], q = [p[0] + ex / l * 0.025, p[1] + ey / l * 0.025]; quad(G, p, q, 0.2, 1.74, nx, nz, 0, 1, GATE_SLAT_C, 0.055); quad(G, q, p, 0.2, 1.74, -nx, -nz, 0, 1, GATE_SLAT_C, 0.055); }
+      for (const [r0, r1] of [[0.08, 0.2], [1.74, 1.86]]) { quad(G, a, b, r0, r1, nx, nz, 0, 1, GATE_SLAT_C, 0.065); quad(G, b, a, r0, r1, -nx, -nz, 0, 1, GATE_SLAT_C, 0.065); }
+      for (const s of [0.06, l / 2, l - 0.06]) { const p = [a[0] + ex / l * (s - 0.06), a[1] + ey / l * (s - 0.06)], q = [a[0] + ex / l * (s + 0.06), a[1] + ey / l * (s + 0.06)]; quad(G, p, q, 0.08, 1.86, nx, nz, 0, 1, GATE_SLAT_C, 0.07); quad(G, q, p, 0.08, 1.86, -nx, -nz, 0, 1, GATE_SLAT_C, 0.07); }
       boxG(G, a[0], a[1], 0.42, 0.42, 0, 2.25, COPING_C); boxG(G, b[0], b[1], 0.42, 0.42, 0, 2.25, COPING_C);
       const lx = -ey / l, ly = ex / l; for (const k of [0.9, 1.75]) { const bx = b[0] + ex / l * k + lx * 0.75, by = b[1] + ey / l * k + ly * 0.75; boxG(G, bx, by, 0.58, 0.62, 0, 1.02, BIN_C); boxG(G, bx, by, 0.62, 0.66, 1.02, 1.1, BIN_LID_C); }
       continue;

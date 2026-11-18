@@ -385,11 +385,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default=os.path.join(HERE, '..', 'data'))
     ap.add_argument('--cache', default=os.path.join(HERE, '..', '.cache'))
+    ap.add_argument('--osm-json', help='read OSM data from this file (made by pbf_to_json.py) instead of the Overpass API')
     args = ap.parse_args()
     phases = [p for p in CFG['phases'] if p.get('enabled')]
     print('Phases:', ', '.join('%d %s' % (p['id'], p['name']) for p in phases))
     extent = unary_union([box(*P(p['bbox'][0], p['bbox'][1]), *P(p['bbox'][2], p['bbox'][3])) for p in phases])
-    els, stamp = fetch([p['bbox'] for p in phases], args.cache)
+    if args.osm_json:
+        d = json.load(open(args.osm_json)); els, stamp = d['elements'], d.get('osm3s', {}).get('timestamp_osm_base')
+    else:
+        els, stamp = fetch([p['bbox'] for p in phases], args.cache)
     print('OSM elements:', len(els), 'data as of', stamp)
 
     T = Tiles()

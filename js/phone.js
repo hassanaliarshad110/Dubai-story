@@ -52,6 +52,7 @@ function openPhoneDubai() {
     <button class="app" data-app="map"><i style="background:#7a3fa0">🗺️</i>Map</button>
     <button class="app" data-app="biz"><i style="background:#b8432f">🛍️</i>Nearby</button>
     <button class="app" data-app="metro"><i style="background:#d7262e">🚇</i>Metro &amp; bus</button>
+    <button class="app" data-app="dxm"><i style="background:#c98a00">⭐</i>Missions</button>
     <button class="app" data-app="burj"><i style="background:#1a1038">🎆</i>Burj show</button>
     <button class="app" data-app="real"><i style="background:#0b7a75">📷</i>Real photos</button>
     <button class="app" data-app="settings"><i style="background:#555">⚙️</i>Settings</button></div>
@@ -63,6 +64,11 @@ function openPhoneDubai() {
     if (a === 'real') appReal();
     if (a === 'goto') appGotoDubai();
     if (a === 'biz') appBiz();
+    if (a === 'dxm' && game.dxm) {
+      const M = game.dxm, L = M.list();
+      show('Missions', `<div class="p-list">${L.map((m, i) => `<button class="p-item" data-i="${i}"><b>${M.done.has(m.id) ? '✅' : '⭐'} ${esc(m.name)} · AED ${m.pay}</b><small>Starts at ${esc(m.start)}${M.cur && M.cur.m === m ? ' · in progress' : ''}</small></button>`).join('') || '<p>No missions here yet.</p>'}</div><p style="font-size:12px;color:#5b6573">Tap a mission to put it on your map, then go to the yellow ring. Each character (Hassan, Farah, Ali) has their own.</p>`);
+      $('.phone-body').querySelectorAll('[data-i]').forEach(b => b.onclick = () => { M.choose(L[+b.dataset.i]); closePhone(); toast('Mission marked on the map'); });
+    }
     if (a === 'metro') appMetroDubai();
     if (a === 'burj' && game.burj && !game.burj.off) {       // straight to the lake at night, facing the tower
       const B = game.burj, fx = B.fx ?? B.x, fy = B.fy ?? B.y - 300, vx = fx + (fx - B.x) * 0.35, vy = fy + (fy - B.y) * 0.35;

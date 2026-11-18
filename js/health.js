@@ -31,9 +31,10 @@ function die(why) {
 function respawn(why) {
   const p = G.player, a = Math.random() * Math.PI * 2, d = 6 + Math.random() * 10;
   let x = p.x + Math.cos(a) * d, y = p.y + Math.sin(a) * d;
-  if (G.tiles && G.tiles.safeSpot) { const s = G.tiles.safeSpot(x, y, { maxR: 40 }); x = s.x; y = s.y; }
-  p.place(x, y, p.h); G.hp = 100; inv = 2; G.deadT = 0; if (p.char) p.char.g.visible = true; const ov = document.getElementById('dead'); if (ov) ov.hidden = true;
-  toast(why === 'splash' ? '💦 Back in the game!' : '🚑 Ouch! You got patched up nearby.');
+  if (G.dubai) { x = -2166.1; y = 72.4; if (p.mode === 'car') { const c = p.exit(); if (c && G.traffic) G.traffic.release(c); const sp = document.getElementById('speed'); if (sp) sp.hidden = true; } }      // Dubai: you wake up at Rashid Hospital
+  else if (G.tiles && G.tiles.safeSpot) { const s = G.tiles.safeSpot(x, y, { maxR: 40 }); x = s.x; y = s.y; }
+  if (G.dubai && G.teleport) G.teleport(x, y); else p.place(x, y, p.h); G.hp = 100; inv = 2; G.deadT = 0; if (p.char) p.char.g.visible = true; const ov = document.getElementById('dead'); if (ov) ov.hidden = true;
+  toast(G.dubai ? '🏥 You wake up at Rashid Hospital.' : why === 'splash' ? '💦 Back in the game!' : '🚑 Ouch! You got patched up nearby.');
   if (G.onRespawn) G.onRespawn(why);
 }
 // every frame: buses and trains (they don't stop for you) push you aside, and hurt when they're moving

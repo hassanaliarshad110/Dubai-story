@@ -732,7 +732,16 @@ def main():
                 c = homes[i].centroid
                 if ridx_w is not None:        # the gate faces the nearest road
                     rl = road_lines_w[ridx_w.nearest(c)]; c = nearest_points(rl, c)[0]
-                gaps.append(ring.interpolate(ring.project(c)).buffer(2.0))
+                gp = ring.interpolate(ring.project(c)).buffer(2.0); gaps.append(gp)
+                # the gate itself (kind 5), drawn so the street is on its left: the engine puts the bins on that side
+                try:
+                    gl_ = ring.intersection(gp); hc = homes[i].centroid
+                    for ln in (gl_.geoms if hasattr(gl_, 'geoms') else [gl_]):
+                        if ln.geom_type != 'LineString' or ln.length < 2: continue
+                        cs = list(ln.coords); (ax, ay), (bx, by) = cs[0], cs[-1]; mx, my = (ax + bx) / 2, (ay + by) / 2
+                        if (-(by - ay)) * (mx - hc.x) + (bx - ax) * (my - hc.y) < 0: cs = cs[::-1]
+                        T.line(L_BARR, 5, 0, 15, 0, None, [cs[0], cs[-1]])
+                except Exception: pass
             wall = ring.difference(unary_union(gaps)) if gaps else ring
             if oidx_w is not None:
                 hit = [others[i] for i in oidx_w.query(ring, predicate='intersects')]

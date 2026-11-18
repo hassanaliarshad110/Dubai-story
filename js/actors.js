@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { busSignTexture } from './textures.js?v=11112231';
 import { vehiclesReady, makeKarachiVehicle } from './vehicles.js?v=11112231';
-import { makeCar3D } from './cars3d.js?v=11112231';
+import { makeCar3D, addPlates } from './cars3d.js?v=11112231';
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const mat = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
@@ -48,13 +48,23 @@ function policeKit(g, L, W, roofY, decalY) {
   lr.position.set(-W * 0.16, roofY + 0.09, -0.15); lb.position.set(W * 0.16, roofY + 0.09, -0.15); g.add(lr, lb);
   g.userData.beacons = [lr, lb]; g.userData.police = true;
 }
+// Dubai: Patrols, Land Cruisers, red Yaris and black Tiidas fill the roads, and every car wears a UAE plate
 export function makeCar(kind = 'car', colour) {
+  const dxb = !!(window.game && window.game.dubai);
+  if (dxb && (kind === 'car' || kind === 'suv' || kind === 'family' || CAR3D_DXB.includes(kind))) {
+    const r = Math.random(), k = CAR3D_DXB.includes(kind) ? kind : kind === 'suv' ? (r < 0.5 ? 'patrol' : 'landcruiser') : r < 0.2 ? 'patrol' : r < 0.4 ? 'landcruiser' : r < 0.55 ? 'yaris' : r < 0.7 ? 'tiida' : r < 0.82 ? 'sorento' : null;
+    const m = k && makeCar3D(k); if (m) return addPlates(m);
+  }
+  const g = makeCar0(kind, colour); return dxb ? addPlates(g) : g;
+}
+const CAR3D_DXB = ['patrol', 'landcruiser', 'yaris', 'tiida'];
+function makeCar0(kind = 'car', colour) {
   // the detailed models: police SUVs (now and then a community peace officer), pickups and off-roaders
   { const r = Math.random(), k = kind === 'police' ? (r < 0.3 ? 'peace' : 'police') : kind === 'peace' ? 'peace' : kind === 'truck' ? 'pickup' : kind === 'suv' ? (r < 0.6 ? 'offroad' : 'pickup') : kind === 'car' ? (r < 0.12 ? 'pickup' : r < 0.2 ? 'offroad' : r < 0.32 ? 'sorento' : r < 0.42 ? 'rondo' : r < 0.52 ? 'veloster' : null) : null;
     const m = k && makeCar3D(k); if (m) return m; }
   if (kind === 'police') {
     const v = vehiclesReady() && makeKarachiVehicle('papurola', 'white');
-    const car = v || makeCar('car', 0xf2f2f2);
+    const car = v || makeCar0('car', 0xf2f2f2);
     const bb = new THREE.Box3().setFromObject(car), sz = bb.getSize(new THREE.Vector3());
     policeKit(car, sz.z, sz.x * 0.97, bb.max.y + 0.02, bb.min.y + sz.y * 0.42); car.userData.kind = 'police'; return car;
   }

@@ -17,6 +17,7 @@ export function closePhone() { $('#phone').hidden = true; game.paused = false; i
 function show(title, html) { $('#phone').hidden = false; $('.phone-title').textContent = title; $('.phone-body').innerHTML = html; game.paused = true; }
 
 export function openPhone() {
+  if (game.dubai) return openPhoneDubai();
   show('Phone', `<div class="apps">
     <button class="app" data-app="311"><i style="background:#c8102e">311</i>Calgary 311</button>
     <button class="app" data-app="transit"><i style="background:#1d4f91">🚌</i>Transit</button>
@@ -41,6 +42,62 @@ export function openPhone() {
     if (a === 'biz') appBiz();
     if (a === 'goto') appGoto();
     if (a === 'facts') appFacts();
+  });
+}
+
+// ---------------------------------------------------------------- Dubai: the phone for Dubai City Stories
+function openPhoneDubai() {
+  show('Phone', `<div class="apps">
+    <button class="app" data-app="goto"><i style="background:#2a6fdb">📍</i>Go to place</button>
+    <button class="app" data-app="map"><i style="background:#7a3fa0">🗺️</i>Map</button>
+    <button class="app" data-app="real"><i style="background:#0b7a75">📷</i>Real photos</button>
+    <button class="app" data-app="settings"><i style="background:#555">⚙️</i>Settings</button></div>
+    <p style="font-size:12px;color:#5b6573;margin-top:22px">In the real UAE: <b>999</b> police · <b>998</b> ambulance · <b>997</b> fire</p>`);
+  $('.phone-body').querySelectorAll('[data-app]').forEach(b => b.onclick = () => {
+    const a = b.dataset.app;
+    if (a === 'map') { closePhone(); openMap(); }
+    if (a === 'settings') appSettings();
+    if (a === 'real') appReal();
+    if (a === 'goto') appGotoDubai();
+  });
+}
+// data/search.json (tools/build_dubai.py): [[name, x, y, kind, rx, ry, alt], ...] streets, buildings, places, areas, addresses
+let SEARCH = null;
+const KIND_ICON = { street: '🛣️', building: '🏢', place: '📌', area: '🏘️', landmark: '⭐', address: '🏠', metro: '🚇' };
+async function loadSearch() {
+  if (SEARCH) return SEARCH;
+  const r = await fetch('data/search.json'); if (!r.ok) throw new Error('no search list');
+  SEARCH = (await r.json()).map(e => ({ e, n: normQ(e[0] + ' ' + (e[6] || '')) }));
+  return SEARCH;
+}
+function normQ(s) { return String(s).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[’'`.,#()\-]/g, ' ').replace(/\b(al|el)\s+/g, 'al').replace(/\s+/g, ' ').trim(); }
+function searchDubai(q) {
+  const words = normQ(q).split(' ').filter(Boolean); if (!words.length) return [];
+  const p = game.player, out = [];
+  for (const s of SEARCH) {
+    const toks = s.n.split(' ');
+    if (!words.every(w => toks.some(t => t.startsWith(w)))) continue;
+    const exact = s.n === words.join(' ') ? 0 : 1, rank = { landmark: 0, area: 1, street: 2, address: 2, metro: 2, place: 3, building: 4 }[s.e[3]] ?? 5;
+    out.push({ s, score: exact * 10 + rank + Math.hypot(s.e[1] - p.x, s.e[2] - p.y) / 1e5 });
+  }
+  return out.sort((a, b) => a.score - b.score).slice(0, 25).map(o => o.s.e);
+}
+function appGotoDubai(q = '', results = null) {
+  show('Go to place', `<input id="addr-q" class="p-input" placeholder="e.g. Deira City Centre, 2 Street, Al Garhoud" value="${esc(q)}" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccd;margin-bottom:8px" autocomplete="off">
+    <button class="p-btn" id="addr-go">Find</button>
+    <div class="p-list" id="addr-res">${results ? (results.length ? results.map((e, i) => `<button class="p-item" data-i="${i}"><b>${KIND_ICON[e[3]] || '📍'} ${esc(e[0])}</b><small>${esc(e[3])}${e[6] ? ' · ' + esc(e[6]) : ''}</small></button>`).join('') : '<p>Nothing found. Try a street (like "2 Street"), an area (like "Al Garhoud") or a building or shop name.</p>') : ''}</div>
+    <p style="font-size:11px;color:#5b6573">Streets, buildings, places and areas from OpenStreetMap. Only the parts of Dubai that are built so far.</p>`);
+  const body = $('.phone-body'), inp = body.querySelector('#addr-q');
+  const go = async () => {
+    const v = inp.value.trim(); if (!v) return;
+    body.querySelector('#addr-res').innerHTML = '<p>Searching…</p>';
+    try { await loadSearch(); appGotoDubai(v, searchDubai(v)); } catch (e) { body.querySelector('#addr-res').innerHTML = '<p>The search list could not be loaded.</p>'; }
+  };
+  body.querySelector('#addr-go').onclick = go; inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+  if (!results) setTimeout(() => inp.focus(), 50);
+  if (results) body.querySelectorAll('[data-i]').forEach(x => x.onclick = () => {
+    const e = results[+x.dataset.i];
+    closePhone(); game.teleport(e[4] ?? e[1], e[5] ?? e[2]); game.setWaypoint(e[1], e[2]); toast('📍 ' + e[0]);
   });
 }
 
@@ -142,12 +199,13 @@ function appSettings() {
     <div class="p-h">Shadows</div><div class="chips"><button class="chip${q.shadows ? ' on' : ''}" data-s="1">On</button><button class="chip${!q.shadows ? ' on' : ''}" data-s="0">Off</button></div>
     <div class="p-h">Night glow (lights bloom after dark)</div><div class="chips"><button class="chip${q.glow ? ' on' : ''}" data-gl="1">On</button><button class="chip${!q.glow ? ' on' : ''}" data-gl="0">Off (faster)</button></div>
     <div class="p-h">Sound</div><div class="chips"><button class="chip${!isMuted() ? ' on' : ''}" data-snd="1">On</button><button class="chip${isMuted() ? ' on' : ''}" data-snd="0">Off</button></div>
-    <div class="p-h">Voices in the stories</div><div class="chips"><button class="chip${voice.on ? ' on' : ''}" data-vo="1">On</button><button class="chip${!voice.on ? ' on' : ''}" data-vo="0">Off</button></div>
-    <div class="p-h">Halloween decorations</div><div class="chips"><button class="chip${HALLOWEEN.on ? ' on' : ''}" data-hw="1">On</button><button class="chip${!HALLOWEEN.on ? ' on' : ''}" data-hw="0">Off</button></div>
+    ${game.dubai ? '' : `<div class="p-h">Voices in the stories</div><div class="chips"><button class="chip${voice.on ? ' on' : ''}" data-vo="1">On</button><button class="chip${!voice.on ? ' on' : ''}" data-vo="0">Off</button></div>`}
+    ${game.dubai ? '' : `<div class="p-h">Halloween decorations</div><div class="chips"><button class="chip${HALLOWEEN.on ? ' on' : ''}" data-hw="1">On</button><button class="chip${!HALLOWEEN.on ? ' on' : ''}" data-hw="0">Off</button></div>`}
     <div class="p-h">Engine volume</div><div class="chips">${[['0', 'Off'], ['0.5', 'Quiet'], ['1', 'Normal']].map(([v, t]) => `<button class="chip${String(engineVolume()) === v ? ' on' : ''}" data-ev="${v}">${t}</button>`).join('')}</div>
     <div class="p-h">Time of day</div><div class="chips">${[['8', 'Morning'], ['13', 'Afternoon'], ['18.5', 'Evening'], ['22', 'Night']].map(([v, t]) => `<button class="chip" data-t="${v}">${t}</button>`).join('')}</div>
-    <button class="p-btn alt" id="s-reset">Start the story again</button>
-    <p style="font-size:12px;color:#5b6573;margin-top:16px"><b>YYC City Stories</b> · A game by Hassan Ali<br>${game.world.credits.data.map(esc).join('<br>')}<br>Map data downloaded ${esc((game.world.osm_date || '').slice(0, 10))}.</p>`);
+    ${game.dubai ? `<div class="p-h">Real 3D Dubai (Google)</div><div class="chips"><button class="chip${game.photo ? ' on' : ''}" data-r3="1">On</button><button class="chip${!game.photo ? ' on' : ''}" data-r3="0">Off (map-drawn city)</button></div>
+    <p style="font-size:12px;color:#5b6573;margin-top:-4px">Real buildings and streets from Google's 3D map. Needs a good connection; changing it restarts the game.</p>` : `<button class="p-btn alt" id="s-reset">Start the story again</button>`}
+    <p style="font-size:12px;color:#5b6573;margin-top:16px"><b>${game.dubai ? 'Dubai City Stories' : 'YYC City Stories'}</b> · A game by Hassan Ali<br>${game.world.credits.data.map(esc).join('<br>')}<br>Map data downloaded ${esc((game.world.osm_date || '').slice(0, 10))}.</p>`);
   const b = $('.phone-body');
   b.querySelectorAll('[data-q]').forEach(x => x.onclick = () => { game.setQuality(x.dataset.q); appSettings(); });
   b.querySelectorAll('[data-fps]').forEach(x => x.onclick = () => { game.setFps(x.dataset.fps === '1'); appSettings(); });
@@ -159,7 +217,8 @@ function appSettings() {
   b.querySelectorAll('[data-vo]').forEach(x => x.onclick = () => { setVoice(x.dataset.vo === '1'); appSettings(); });
   b.querySelectorAll('[data-hw]').forEach(x => x.onclick = () => { setHalloween(x.dataset.hw === '1'); appSettings(); });
   b.querySelectorAll('[data-t]').forEach(x => x.onclick = () => { game.clock = +x.dataset.t; toast('Time changed'); });
-  $('#s-reset').onclick = () => { game.missions.reset(); closePhone(); location.reload(); };
+  b.querySelectorAll('[data-r3]').forEach(x => x.onclick = () => { const on = x.dataset.r3 === '1'; if (on === !!game.photo) return; game.setReal3d(on); });
+  if ($('#s-reset')) $('#s-reset').onclick = () => { game.missions.reset(); closePhone(); location.reload(); };
 }
 
 // ---------------------------------------------------------------- grocery shop

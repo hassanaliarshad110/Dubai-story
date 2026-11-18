@@ -17,7 +17,8 @@ export class PhotoCity {
     tiles.registerPlugin(new TileCompressionPlugin());
     tiles.registerPlugin(new UnloadTilesPlugin());
     tiles.registerPlugin(new TilesFadePlugin());
-    this.reo = new ReorientationPlugin({ lat: world.proj.lat0 * DEG, lon: world.proj.lon0 * DEG, height: 1045, recenter: true });
+    this.H = opts.height ?? 1045;          // ellipsoid height of the ground near the origin (Calgary ~1045 m, Dubai ~-25 m)
+    this.reo = new ReorientationPlugin({ lat: world.proj.lat0 * DEG, lon: world.proj.lon0 * DEG, height: this.H, recenter: true });
     tiles.registerPlugin(this.reo);
     tiles.errorTarget = opts.errorTarget ?? 6;
     tiles.lruCache.minSize = 900; tiles.lruCache.maxSize = 1400;
@@ -33,7 +34,7 @@ export class PhotoCity {
   // keep the tiles' local frame near the player so the flat game map and the curved Earth line up
   setAnchor(x, y) {
     const p = this.world.proj, lat = p.lat0 + y / p.ky, lon = p.lon0 + x / p.kx;
-    this.reo.transformLatLonHeightToOrigin(lat * DEG, lon * DEG, 1045);
+    this.reo.transformLatLonHeightToOrigin(lat * DEG, lon * DEG, this.H);
     const r = lat * DEG, kx = 111412.84 * Math.cos(r) - 93.5 * Math.cos(3 * r);
     this.anchor.position.set(x, 0, -y);
     this.anchor.scale.set(p.kx / kx, 1, 1);              // the game map's east-west metres at this latitude

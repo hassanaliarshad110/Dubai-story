@@ -22,7 +22,7 @@ jobs:
           python-version: '3.12'
       - run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
-          pip install shapely==2.0.6 osmium
+          pip install shapely==2.0.6 osmium overturemaps
       - name: Download OpenStreetMap (GCC states, from Geofabrik)
         run: |
           mkdir -p .cache
@@ -34,10 +34,16 @@ jobs:
           echo "bbox $BB"
           osmium extract -b "$BB" -s smart -S types=multipolygon,boundary .cache/gcc.osm.pbf -o .cache/phase.osm.pbf --overwrite
           python tools/pbf_to_json.py .cache/phase.osm.pbf .cache/phase.json
-      - run: python tools/build_dubai.py --out data --osm-json .cache/phase.json
+      - name: Download Overture Maps buildings (fills in homes OpenStreetMap is missing)
+        continue-on-error: true
+        run: |
+          BB=$(python -c "import json;p=[x['bbox'] for x in json.load(open('tools/phases.json'))['phases'] if x.get('enabled')];print('%f,%f,%f,%f'%(min(b[0] for b in p),min(b[1] for b in p),max(b[2] for b in p),max(b[3] for b in p)))")
+          overturemaps download --bbox=$BB -f geojson --type=building -o .cache/overture_buildings.geojson
+          ls -la .cache
+      - run: python tools/build_dubai.py --out data --osm-json .cache/phase.json --overture .cache/overture_buildings.geojson
       - name: Commit the map
         run: |
           git config user.name "Hassan Ali"
           git config user.email "hassanaliarshad110@users.noreply.github.com"
-          git add -A data/world.json data/build-report.json data/p
+          git add -A data/world.json data/build-report.json data/search.json data/p
           git diff --cached --quiet || (git commit -qm "Dubai map: rebuild tiles from OpenStreetMap" && git pull -q --rebase -X theirs && git push -q)

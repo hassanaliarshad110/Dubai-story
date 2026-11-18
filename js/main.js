@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { initMaterials, setNight, MAT } from './materials.js?v=11112231';
 import { setMaxAnisotropy } from './textures.js?v=11112231';
-import { TileManager, SPEED_LIMIT, loadTreeModels, TREE_M, STYLE } from './tiles.js?v=11112231';
+import { TileManager, SPEED_LIMIT, loadTreeModels, TREE_M, STYLE, AREA_COL } from './tiles.js?v=11112231';
 import { buildWorldMeshes, prepLookups, communityAt, wardAt, loadSky3D } from './world.js?v=11112231';
 import { Player, dirOf, angDiff, LOOKS } from './player.js?v=11112231';
 import { Traffic } from './traffic.js?v=11112231';
@@ -46,6 +46,7 @@ import { loadParks, ParkAssets, parksCredit } from './parks.js?v=11112231';
 import { loadFields, Fields } from './fields.js?v=11112231';
 import { loadLyrics, updateLyrics } from './lyrics.js?v=11112231';
 import { GOOGLE_KEY } from './config.js?v=11112231';
+import { PhotoCity } from './photo.js?v=11112231';
 import { music } from './music.js?v=11112231';
 window.__music = music;
 import { newHeli, idleHeli, syncHeli } from './heli.js?v=11112231';
@@ -74,7 +75,7 @@ const Q0 = QUALITY[saved.q] ? saved.q : guessQuality(mobile);
 if (!QUALITY[saved.q] && saved.v !== 2) { const P0 = QUALITY[Q0]; saved.shadows = P0.shadows; saved.glow = P0.glow; if (saved.v === 2) saved.radius = Math.min(saved.radius ?? P0.radius, P0.radius); }
 const game = window.game = { mobile, input,
   paused: false, clock: 9.0, name: 'Ayaan', look: 'ayaan', waypoint: null, rideVehicle: null,
-  settings: { v: 2, radius: saved.v === 2 ? (saved.radius ?? (mobile ? 2 : 3)) : Math.max(saved.radius || 0, mobile ? 2 : 3), shadows: saved.shadows ?? !mobile, photo: saved.photo ?? true, glow: saved.glow ?? true, q: Q0, fps: !!saved.fps },
+  settings: { real3d: saved.real3d, v: 2, radius: saved.v === 2 ? (saved.radius ?? (mobile ? 2 : 3)) : Math.max(saved.radius || 0, mobile ? 2 : 3), shadows: saved.shadows ?? !mobile, photo: saved.photo ?? true, glow: saved.glow ?? true, q: Q0, fps: !!saved.fps },
 };
 game.key = (() => { try { return localStorage.getItem('yyc-gkey') || GOOGLE_KEY; } catch (e) { return GOOGLE_KEY; } })();
 game.photoOn = false;          // the Google 3D city is not used in gameplay; the key is used for real street photos
@@ -139,6 +140,8 @@ async function boot() {
   status('Loading the map of Dubai…');
   const r = await fetch('data/world.json'); world = await r.json(); game.world = world;
   const DXB = game.dubai = world.cityId === 'dubai';      // Dubai City Stories: the Calgary-only systems stay off
+  // Dubai: the real city from Google's Photorealistic 3D Tiles (Map Tiles API, Hassan's key) unless switched off in Settings or ?map
+  if (DXB) game.photoOn = game.settings.real3d !== false && !/[?&]map\b/.test(location.search);
   if (DXB) for (const c of ['Dubai City Stories: a game by Hassan Ali, built on the real map of Dubai', 'People, vehicles and trees: 3D models made for this game'])
     if (!world.credits.data.includes(c)) world.credits.data.push(c);
   if (!DXB)   for (const c of ['Ground heights: City of Calgary LiDAR bare-earth elevation model 2022–2024 (Open Government Licence – City of Calgary); outside the city, contains modified Copernicus DEM GLO-30 data (European Union, ESA)', 'Businesses and property types: City of Calgary business licences and property assessments, Open Government Licence – City of Calgary', 'Park benches, picnic tables, playgrounds, fountains and park signs: City of Calgary Parks open data, Open Government Licence – City of Calgary', 'Traffic signals and road signs: City of Calgary open data, Open Government Licence – City of Calgary', 'Ward boundaries and councillors: City of Calgary open data', 'Shops and restaurants: City of Calgary business licences and OpenStreetMap contributors', 'Sports fields (soccer, football, rugby, cricket): City of Calgary Parks Sport Surfaces open data, Open Government Licence – City of Calgary', 'People, animals, trees, homes, vehicles and landmarks (Historic City Hall, The Bow, Brookfield Place, Suncor Energy Centre, TELUS Sky, the Saddledome, Nelson Mandela High School, Real Canadian Superstores): 3D models made for this game; homes are fitted to the City of Calgary 3D building footprints and heights', '311 requests: City of Calgary 311 Service Requests open data (the last 14 days, refreshed every two weeks), Open Government Licence – City of Calgary; each icon is placed at a random spot in its community', 'Online play: positions and chat pass through the game server; voice chat goes straight between nearby players and is never recorded', 'Title song: "Under One Sky" by Hassan Ali', 'Song: "Beyond the Mask" by Hassan Ali', 'Dialogue voices: Kokoro (Apache License 2.0) and Meta MMS-TTS (CC BY-NC 4.0, non-commercial)', 'Stampede Park, its concerts and the midway are a game re-creation, not affiliated with the Calgary Stampede'])
@@ -146,7 +149,11 @@ async function boot() {
   $('#data-credits').innerHTML = world.credits.data.join('<br>');
   status(DXB ? 'Building Dubai…' : 'Building the city…');
   prepLookups(world); setMaxAnisotropy(renderer.capabilities.getMaxAnisotropy()); initMaterials();
-  if (DXB) { STYLE.dubai = true; MAT.base.color.setHex(0xd9c59c); MAT.baseFar && MAT.baseFar.color && MAT.baseFar.color.setHex(0xd9c59c); scene.fog.color.setHex(0xe3dccb); }
+  if (DXB) {        // a paved Gulf city: light concrete and interlock paving, green only where there are parks and verges; sand only on open plots
+    STYLE.dubai = true; MAT.base.color.setHex(0xbcb8af); if (MAT.baseFar && MAT.baseFar.color) MAT.baseFar.color.setHex(0xbcb8af);
+    Object.assign(AREA_COL, { 1: 0xc9c3b6, 2: 0xc2bdb3, 3: 0xb5b0a7, 4: 0xc4bfb5, 16: 0xd2c3a0, 19: 0xb9b3a6, 22: 0xa9a8a4, 25: 0xbfb9a6, 9: 0x8fae5e });
+    scene.fog.color.setHex(0xdfe2e3);
+  }
   status('Shaping the hills…'); await loadTerrain();
   buildWorldMeshes(scene, world); if (!DXB) addMountains();
   if (world.b3d) { status('Raising the skyline…'); try { await loadSky3D(scene); } catch (e) { console.warn('sky3d', e); } }
@@ -158,6 +165,8 @@ async function boot() {
     for (const o of scene.children) if (o.name === 'world') o.visible = false;
     if (game.mountains) game.mountains.visible = false;
     status('Loading Google 3D city…');
+    try { game.photo = new PhotoCity(scene, camera, renderer, world, game.key, { errorTarget: mobile ? 14 : 8, height: world.photoHeight }); }
+    catch (e) { console.warn('google 3d', e); game.photo = null; }
   }
   status('Loading people and cars…');
   await Promise.all(DXB ? [loadHero(), loadVehicles(), loadLyrics(), loadTreeModels()] : [loadHero(), loadVehicles(), loadBusinesses(), loadParks(), loadSigns(), loadBillboards(), loadFields(), loadLyrics(), loadTreeModels(), loadPlazas()]);
@@ -387,6 +396,7 @@ game.setQuality = q => {
   game.settings.glow = P1.glow; game.setRadius(P1.radius); saveSettings();
 };
 game.setFps = on => { game.settings.fps = on; fpsMeter.show(on); saveSettings(); };
+game.setReal3d = on => { game.settings.real3d = on; saveSettings(); location.replace(location.pathname + (on ? '' : '?map')); };
 function saveSettings() { try { localStorage.setItem('yyc-settings', JSON.stringify(game.settings)); } catch (e) { } }
 game.findRoadSpot = (x, y, dmin, dmax) => {
   let best = null;

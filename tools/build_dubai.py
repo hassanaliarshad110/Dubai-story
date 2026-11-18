@@ -387,6 +387,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default=os.path.join(HERE, '..', 'data'))
     ap.add_argument('--cache', default=os.path.join(HERE, '..', '.cache'))
+    ap.add_argument('--overture', help='Overture Maps buildings (GeoJSON) to fill in buildings OpenStreetMap is missing')
     ap.add_argument('--osm-json', help='read OSM data from this file (made by pbf_to_json.py) instead of the Overpass API')
     args = ap.parse_args()
     phases = [p for p in CFG['phases'] if p.get('enabled')]
@@ -438,12 +439,14 @@ def main():
         zs = [max(0.0, max(NH[w['nodes'][r]] - grade * abs(d[i] - d[r]) for r in raisedIdx)) for i in range(len(pts))]
         return pts, zs
 
-    overview, ctrl = [], []
+    overview, ctrl, streets = [], [], {}
     for w, typ in linear:
         t = w['tags']; pts, zs = heights(w, typ)
         if len(pts) < 2 or not inside(LineString(pts)): continue
         nm = name_of(t); layer = int(num(t.get('layer')) or 0)
         tunnel = 4 if (t.get('tunnel') in ('yes', 'culvert', 'flooded') or t.get('location') == 'underground') else 0
+        if typ == 'road' and nm and not tunnel:
+            streets.setdefault(nm, {'alt': t.get('name:ar'), 'pts': []})['pts'].extend(pts)
         if typ == 'road':
             k = ROAD[t['highway']]; ow = oneway(t, t['highway'])
             if ow == -1: pts = pts[::-1]; zs = zs[::-1] if zs else zs
@@ -468,9 +471,19 @@ def main():
     big, skyline, comms = [], [], []
     bld = []         # (geom, tags, is_part)
     named = []       # (name, x, y) for landmark lookup
+    search = []      # [name, x, y, kind, alt]  (snapped to the nearest street at the end)
+    def addr_of(t):
+        hn = t.get('addr:housenumber') or t.get('addr:unit')
+        if hn and t.get('addr:street'): return '%s %s' % (hn, t['addr:street'])
+        if t.get('addr:housename'): return t['addr:housename'] + (', ' + t['addr:street'] if t.get('addr:street') else '')
+        return None
     def area_feature(geom, t):
         nm = name_of(t)
         if nm: c = geom.representative_point(); named.append((nm, c.x, c.y, geom.area))
+        if inside(geom):
+            c = geom.representative_point(); ad = addr_of(t)
+            if nm: search.append([nm, c.x, c.y, 'building' if (t.get('building') or t.get('building:part')) else 'place', t.get('name:ar') or ad])
+            if ad: search.append([ad, c.x, c.y, 'address', nm])
         if t.get('building') or t.get('building:part'):
             bld.append((geom, t, 'building:part' in t and not t.get('building'))); return
         if not inside(geom): return
@@ -533,6 +546,45 @@ def main():
                     big.append({'k': 99, 'n': 'Arabian Gulf', 'g': sea})
                     stats['sea'] += 1
 
+    # ---- Overture Maps buildings (OpenStreetMap plus machine-traced footprints) fill in buildings OSM is missing
+    if args.overture and os.path.exists(args.overture):
+        from shapely.geometry import shape
+        from shapely.strtree import STRtree as _ST
+        osm_geoms = [g for g, t, p in bld if not p]
+        oidx = _ST(osm_geoms) if osm_geoms else None
+        added = 0
+        gj = json.load(open(args.overture))
+        for ft in gj.get('features', []):
+            pr = ft.get('properties') or {}
+            src = pr.get('sources')
+            if isinstance(src, str):
+                try: src = json.loads(src)
+                except Exception: src = []
+            if any(d.get('dataset') == 'OpenStreetMap' for d in (src or []) if isinstance(d, dict)): continue
+            try: g0 = shape(ft['geometry'])
+            except Exception: continue
+            for p in polys_of(g0):
+                try:
+                    g = Polygon([P(x, y) for x, y in p.exterior.coords])
+                    if not g.is_valid: g = make_valid(g)
+                except Exception: continue
+                if g.is_empty or g.area < 12 or not inside(g): continue
+                if oidx is not None:
+                    hit = False
+                    for i in oidx.query(g, predicate='intersects'):
+                        o = osm_geoms[i]
+                        try: ov = g.intersection(o).area
+                        except Exception: ov = 0
+                        if ov > 0.25 * min(g.area, o.area): hit = True; break
+                    if hit: continue
+                cls = pr.get('class') or pr.get('subtype') or ''
+                t = {'building': cls or ('house' if g.area < 700 else 'yes')}
+                if pr.get('height'): t['height'] = str(pr['height'])
+                elif pr.get('num_floors'): t['building:levels'] = str(pr['num_floors'])
+                bld.append((g, t, False)); added += 1
+        stats['overture_buildings'] = added
+        print('Overture buildings added:', added)
+
     # ---- buildings (whole, in the tile that holds their centre). Outlines with parts inside give way to the parts.
     parts = [b for b in bld if b[2]]
     from shapely.strtree import STRtree
@@ -574,12 +626,16 @@ def main():
             T.point(L_TREE, 6 if palm else 2, 0, h * 10, (num(t.get('diameter_crown')) or 5) * 5, None, x, y); stats['tree'] += 1; continue
         if t.get('highway') == 'traffic_signals': ctrl.append([round(x, 1), round(y, 1), 'signals']); continue
         if t.get('highway') == 'bus_stop': T.point(L_STOP, 1, 0, 0, 0, nm, x, y); continue
+        ad = addr_of(t)
+        if ad: search.append([ad, x, y, 'address', nm])
         if t.get('railway') in ('station', 'halt') or t.get('public_transport') == 'station':
-            T.point(L_STOP, 2, 0, 0, 0, nm, x, y); continue
+            T.point(L_STOP, 2, 0, 0, 0, nm, x, y)
+            if nm: search.append([nm, x, y, 'metro', t.get('name:ar')])
+            continue
         k, c = poi_kind(t)
         if k:
             T.point(L_POI, k, 0, 0, 0, nm, x, y)
-            if nm: places.append({'c': c, 'n': nm, 'x': round(x, 1), 'y': round(y, 1), 'a': t.get('addr:street'), 'b': None})
+            if nm: places.append({'c': c, 'n': nm, 'x': round(x, 1), 'y': round(y, 1), 'a': t.get('addr:street'), 'b': None}); search.append([nm, x, y, 'place', t.get('name:ar') or c])
 
     # ---- landmarks found in the data
     landmarks = []
@@ -639,6 +695,37 @@ def main():
             xs = [pt[0] for po in polys for pt in po[0]]; ys = [pt[1] for po in polys for pt in po[0]]
             c['lx'], c['ly'] = round(sum(xs) / len(xs)), round(sum(ys) / len(ys))
             communities.append(c)
+    # ---- search list: streets, areas, landmarks, buildings, places and addresses, each snapped to a nearby street spot
+    from shapely.strtree import STRtree as _ST2
+    road_lines = []
+    for key in T.t:
+        ix, iy = map(int, key.split('_'))
+        for kind, flags, a, b, nm_, rings in T.t[key].get(L_ROAD, []):
+            if kind in (3, 4, 5, 6, 7, 9) and not flags & 20 and len(rings[0]) >= 2:
+                road_lines.append(LineString([(ix * TS + x, iy * TS + y) for x, y, z in rings[0]]))
+    ridx = _ST2(road_lines) if road_lines else None
+    def snap(x, y):
+        if ridx is None: return x, y
+        i = ridx.nearest(Point(x, y)); ln = road_lines[i]; p = ln.interpolate(ln.project(Point(x, y)))
+        return (p.x, p.y) if p.distance(Point(x, y)) < 400 else (x, y)
+    for nm_, st in streets.items():
+        pts = st['pts']; mx = sum(p[0] for p in pts) / len(pts); my = sum(p[1] for p in pts) / len(pts)
+        bx, by = min(pts, key=lambda p: (p[0] - mx) ** 2 + (p[1] - my) ** 2)
+        if extent.contains(Point(bx, by)): search.append([nm_, bx, by, 'street', st['alt']])
+    for l in landmarks: search.append([l['label'], l['x'], l['y'], 'landmark', None])
+    for a in areas: search.append([a['n'], a['x'], a['y'], 'area', None])
+    for c in communities: search.append([c['n'], c['lx'], c['ly'], 'area', None])
+    seen, sout = set(), []
+    for nm_, x, y, k, alt in search:
+        key = (nm_.lower(), k, round(x / 150), round(y / 150))
+        if key in seen: continue
+        seen.add(key); rx, ry = snap(x, y)
+        e = [nm_, round(x, 1), round(y, 1), k, round(rx, 1), round(ry, 1)]
+        if alt and alt != nm_: e.append(alt)
+        sout.append(e)
+    json.dump(sout, open(os.path.join(out, 'search.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
+    stats['search_entries'] = len(sout)
+
     world = {
         'v': 1, 'ts': TS, 'cityId': 'dubai', 'cityName': 'Dubai',
         'proj': {'lat0': O['lat'], 'lon0': O['lon'], 'kx': KX, 'ky': KY},
@@ -648,7 +735,7 @@ def main():
         'skyline': skyline, 'ctrain': [], 'routes': [], 'stops': [], 'ctrl': ctrl, 'places': places,
         'landmarks': landmarks, 'areas': areas, 'help': {'checked': '', 'places': []}, 'spawn': spawn,
         'credits': {'by': 'Hassan Ali', 'data': ['Map data © OpenStreetMap contributors, Open Database Licence (ODbL)']},
-        'pack': PACK, 'decks': 1, 'addr': 0, 'trees': 2,
+        'pack': PACK, 'decks': 1, 'addr': 0, 'trees': 2, 'photoHeight': -25,
     }
     json.dump(world, open(os.path.join(out, 'world.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
     report = {'built': world['built'], 'osm_date': stamp, 'phases': world['phases'], 'tiles': len(tiles), 'packs': len(packs),

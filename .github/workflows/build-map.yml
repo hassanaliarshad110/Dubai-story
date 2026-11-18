@@ -4,7 +4,7 @@ name: Build the Dubai map
 on:
   push:
     branches: [main]
-    paths: ['tools/build_dubai.py', 'tools/pbf_to_json.py', 'tools/phases.json', '.github/workflows/build-map.yml']
+    paths: ['tools/build_dubai.py', 'tools/pbf_to_json.py', 'tools/build_s2.py', 'tools/worldcover_trees.py', 'tools/phases.json', '.github/workflows/build-map.yml']
   workflow_dispatch:
 permissions:
   contents: write

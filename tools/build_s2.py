@@ -61,9 +61,8 @@ def render(x0, y1, w_m, h_m, px_w, px_h):
         ok = v.sum(axis=1) > 0                                   # no-data edges of a scene are black
         idx = np.argwhere(need)[ok]
         out[idx[:, 0], idx[:, 1]] = v[ok]; filled[idx[:, 0], idx[:, 1]] = True
-    # brighten the true-colour image a little (desert haze makes it flat), keep it natural
     f = out.astype(np.float32) / 255.0
-    f = np.clip((f ** 0.85) * 1.12, 0, 1)
+    f = np.clip(f ** 1.12, 0, 1)                      # true colour, a touch darker so streets and buildings stand out
     return Image.fromarray((f * 255).astype(np.uint8)), filled.mean()
 
 os.makedirs(os.path.join(args.data, 's2'), exist_ok=True)

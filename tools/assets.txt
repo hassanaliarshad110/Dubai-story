@@ -1,0 +1,2 @@
+# path url  (models made for the game; fetched once into the repo)
+data/veh/dxb_suv.glb https://d8j0ntlcm91z4.cloudfront.net/user_3KCBM5g2og8WAtnWqfWf92dKZR4/hf_20261118_232036_a7b14da9-1aed-4452-b166-c91c73be5c8f.glb

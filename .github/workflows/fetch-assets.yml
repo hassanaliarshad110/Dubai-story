@@ -1,0 +1,26 @@
+name: Fetch assets
+on:
+  push:
+    paths: ['tools/assets.txt', '.github/workflows/fetch-assets.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download
+        run: |
+          while read -r path url; do
+            [ -z "$path" ] && continue
+            case "$path" in \#*) continue;; esac
+            if [ ! -f "$path" ]; then mkdir -p "$(dirname "$path")"; curl -fsSL --retry 4 -o "$path" "$url" && ls -la "$path" || echo "FAILED $path"; fi
+          done < tools/assets.txt
+      - name: Commit
+        run: |
+          git config user.name "Hassan Ali"
+          git config user.email "hassanaliarshad110@users.noreply.github.com"
+          git add -A data/veh data/models || true
+          git diff --cached --quiet || git commit -m "Add game models"
+          git pull -q --rebase origin main && git push

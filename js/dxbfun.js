@@ -33,6 +33,11 @@ const EXTRA = [
   { label: 'Arabian Tea House', x: -4058, y: 2145 },
   { label: 'Rashid Hospital', x: -2166, y: 72 },
 ];
+// where each character lives, and the car that waits outside
+export const HOMES = {
+  hassan: { x: 1146, y: -158.5, h: 0, name: '27C Street, Al Garhoud' },
+  farah: null,      // AB Residence 2, Al Warsan (filled in below once that part of the map is built)
+};
 const SALIK = [['Al Garhoud Bridge', -265, -1236], ['Al Maktoum Bridge', -1894, 856], ['Business Bay Crossing', 951, -1796], ['Airport Tunnel', 3020, 610], ['Al Safa', -7700, -5560], ['Infinity Bridge', -3959, 3756]];
 const FINE = over => over > 80 ? 3000 : over > 60 ? 2000 : over > 50 ? 1500 : over > 40 ? 1000 : over > 30 ? 700 : 600;
 const fmt = n => 'AED ' + Math.round(n).toLocaleString('en-US');
@@ -92,6 +97,9 @@ export class DubaiFun {
     this.home = null;
     this.salikCool = {}; this.jamT = 0; this.heatT = 90; this.parkT = 0; this.quipT = 40;
   }
+  homeFor(story) { return HOMES[story] || null; }
+  // the character's own car, parked beside where they start
+  stockCar(x, y, h, kind) { this.stock = { x, y, h, kind }; }
   save() { try { localStorage.setItem('dcs-fines', JSON.stringify(this.s)); } catch (e) { } }
   draw(bump) {
     const s = this.s; this.el.hidden = !(s.due > 0 || s.n > 0 || s.salik > 0);
@@ -171,6 +179,10 @@ export class DubaiFun {
         const y = -153.2, mesh = makeCar(k), gy = ground(x, y), car = { mesh, parked: true, x, y, h: 0, gy, v: 0, s: 0, dir: 1, piece: g.traffic.pieces[0], mission: true, hp: 200 };
         mesh.position.set(x, gy + TYRE_Y, -y); mesh.rotation.y = rotY(0); this.scene.add(mesh); g.traffic.cars.push(car);
       }
+    }
+    if (this.stock && g.traffic && g.traffic.pieces && g.traffic.pieces.length && Math.hypot(this.stock.x - p.x, this.stock.y - p.y) < 200) {
+      const s = this.stock; this.stock = null; const mesh = makeCar(s.kind), gy = ground(s.x, s.y), car = { mesh, parked: true, x: s.x, y: s.y, h: s.h, gy, v: 0, s: 0, dir: 1, piece: g.traffic.pieces[0], mission: true, hp: 200, owned: true };
+      mesh.position.set(s.x, gy + TYRE_Y, -s.y); mesh.rotation.y = rotY(s.h); this.scene.add(mesh); g.traffic.cars.push(car); this.ownCar = car;
     }
     // ---- OMNIYAT signs: put one on the roof once that tower has loaded
     for (const s of this.signs) {

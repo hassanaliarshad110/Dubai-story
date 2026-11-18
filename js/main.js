@@ -679,7 +679,11 @@ function loop(now) {
       }
     }
     const cm = communityAt(world, player.x, player.y);
-    const name = cm ? cm.n : 'Outside the city';
+    let name = cm ? cm.n : 'Outside the city';
+    if (!cm && world.areas && world.areas.length) {      // Dubai: the nearest named area (Al Garhoud, Port Saeed, ...)
+      let best = null, bd = 2500; for (const p of world.areas) { const d = Math.hypot(p.x - player.x, p.y - player.y); if (d < bd) { bd = d; best = p; } }
+      name = best ? best.n : 'Dubai';
+    }
     $('#loc-comm').textContent = name;
     const st = tiles.streetAt(player.x, player.y, 35);
     $('#loc-street').textContent = st ? st.name : '';

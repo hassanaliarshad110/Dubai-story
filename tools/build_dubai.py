@@ -319,10 +319,12 @@ def clip_line(pts, zs, x0, y0, x1, y1):
     return [c for c in out if len(c) >= 2]
 
 class Tiles:
-    def __init__(self):
+    def __init__(self, allowed=None):
         self.t = defaultdict(lambda: defaultdict(list))      # key -> layer -> features
+        self.allowed = allowed                               # tiles that touch the enabled phases
 
     def add(self, ix, iy, layer, kind, flags, a, b, name, rings):
+        if self.allowed is not None and (ix, iy) not in self.allowed: return
         self.t[tkey(ix, iy)][layer].append((kind, flags, int(max(0, min(65535, a))), int(max(0, min(65535, b))), name, rings))
 
     def line(self, layer, kind, flags, a, b, name, pts, zs=None):
@@ -396,7 +398,10 @@ def main():
         els, stamp = fetch([p['bbox'] for p in phases], args.cache)
     print('OSM elements:', len(els), 'data as of', stamp)
 
-    T = Tiles()
+    ex0, ey0, ex1, ey1 = extent.bounds
+    allowed = {(ix, iy) for ix in range(math.floor(ex0 / TS), math.floor(ex1 / TS) + 1) for iy in range(math.floor(ey0 / TS), math.floor(ey1 / TS) + 1)
+               if extent.intersects(box(ix * TS, iy * TS, (ix + 1) * TS, (iy + 1) * TS))}
+    T = Tiles(allowed)
     inside = lambda g: g.intersects(extent)
     ways = [e for e in els if e['type'] == 'way' and e.get('geometry')]
     rels = [e for e in els if e['type'] == 'relation']
@@ -531,10 +536,15 @@ def main():
     # ---- buildings (whole, in the tile that holds their centre). Outlines with parts inside give way to the parts.
     parts = [b for b in bld if b[2]]
     from shapely.strtree import STRtree
-    pidx = STRtree([p[0].representative_point() for p in parts]) if parts else None
+    pidx = STRtree([p[0] for p in parts]) if parts else None
     for geom, t, is_part in bld:
         if not inside(geom): continue
-        if not is_part and pidx is not None and len(pidx.query(geom, predicate='contains')) > 0: continue
+        if not is_part and pidx is not None:       # an outline gives way to its parts only when they cover most of it
+            hits = pidx.query(geom, predicate='intersects')
+            if len(hits):
+                try: cover = unary_union([parts[i][0] for i in hits]).intersection(geom).area
+                except Exception: cover = 0
+                if cover >= 0.6 * geom.area: continue
         k = bld_kind(t); h, mh = bld_height(t, k)
         flags = 0
         for p in polys_of(geom):
@@ -551,9 +561,11 @@ def main():
                 T.add(ix, iy, L_BLD, kk, fl, h * 10, mh * 10, name_of(t), [ring]); stats['building'] += 1
 
     # ---- points: trees, stops, signals, places
-    places = []
+    places, areas = [], []
     for n in nodes:
         t = n.get('tags', {}); x, y = P(n['lon'], n['lat'])
+        if t.get('place') in ('suburb', 'neighbourhood', 'quarter', 'village', 'town') and name_of(t) and extent.buffer(4000).contains(Point(x, y)):
+            areas.append({'n': name_of(t), 'x': round(x), 'y': round(y), 'k': t['place']})
         if not extent.contains(Point(x, y)): continue
         nm = name_of(t)
         if nm: named.append((nm, x, y, 0))
@@ -630,14 +642,14 @@ def main():
         'phases': [{'id': p['id'], 'name': p['name'], 'areas': p['areas'], 'bbox': p['bbox']} for p in phases],
         'tiles': tiles, 'city': city, 'communities': communities, 'wards': [], 'overview': overview, 'big': bigo,
         'skyline': skyline, 'ctrain': [], 'routes': [], 'stops': [], 'ctrl': ctrl, 'places': places,
-        'landmarks': landmarks, 'help': {'checked': '', 'places': []}, 'spawn': spawn,
+        'landmarks': landmarks, 'areas': areas, 'help': {'checked': '', 'places': []}, 'spawn': spawn,
         'credits': {'by': 'Hassan Ali', 'data': ['Map data © OpenStreetMap contributors, Open Database Licence (ODbL)']},
         'pack': PACK, 'decks': 1, 'addr': 0, 'trees': 2,
     }
     json.dump(world, open(os.path.join(out, 'world.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
     report = {'built': world['built'], 'osm_date': stamp, 'phases': world['phases'], 'tiles': len(tiles), 'packs': len(packs),
               'counts': dict(stats), 'skyline_towers': len(skyline), 'landmarks': [l['label'] for l in landmarks],
-              'communities': [c['n'] for c in communities], 'spawn': spawn,
+              'communities': [c['n'] for c in communities], 'areas': [a['n'] for a in areas], 'spawn': spawn,
               'towers_without_height': sorted({name_of(t) or '(unnamed)' for g, t, _ in bld if inside(g) and not (t.get('height') or t.get('building:levels')) and g.area > 1500})[:200]}
     json.dump(report, open(os.path.join(out, 'build-report.json'), 'w'), ensure_ascii=False, indent=1)
     print(json.dumps({k: v for k, v in report.items() if k != 'towers_without_height'}, ensure_ascii=False, indent=1))

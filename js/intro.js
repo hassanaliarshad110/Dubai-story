@@ -42,7 +42,7 @@ export function initIntro({ music, characters, onPick }) {
   // first tap: the song starts (from the chorus) with "Calgary Insight presents", then the title
   $('#btn-start').onclick = () => {
     music.titleChorus();
-    $('#btn-start').hidden = true; $('.ci-name').hidden = true; const pr = $('.presents'); pr.hidden = false;
+    $('#btn-start').hidden = true; const pr = $('.presents'); pr.hidden = false;
     setTimeout(() => { if (!$('#intro-presents').hidden) show('#intro-title'); }, 3700);
   };
   $('#btn-tap').onclick = () => { music.titleChorus(); show('#intro-lang'); };

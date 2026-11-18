@@ -1,5 +1,5 @@
 {
- "built": "2026-11-18 13:28:52",
+ "built": "2026-11-18 13:59:11",
  "osm_date": "",
  "phases": [
   {
@@ -24,8 +24,10 @@
   "area": 1734,
   "water": 16,
   "sea": 1,
-  "building": 29188,
-  "tree": 30
+  "overture_buildings": 1460,
+  "building": 30648,
+  "tree": 30,
+  "search_entries": 3492
  },
  "skyline_towers": 231,
  "landmarks": [

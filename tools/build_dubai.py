@@ -701,7 +701,7 @@ def main():
     for key in T.t:
         ix, iy = map(int, key.split('_'))
         for kind, flags, a, b, nm_, rings in T.t[key].get(L_ROAD, []):
-            if kind in (3, 4, 5, 6, 7, 9) and not flags & 20 and len(rings[0]) >= 2:
+            if kind in (3, 4, 5, 6, 9) and not flags & 20 and len(rings[0]) >= 2:      # real streets, not parking aisles
                 road_lines.append(LineString([(ix * TS + x, iy * TS + y) for x, y, z in rings[0]]))
     ridx = _ST2(road_lines) if road_lines else None
     def snap(x, y):

@@ -1,5 +1,5 @@
 {
- "built": "2026-11-18 14:28:55",
+ "built": "2026-11-18 15:08:46",
  "osm_date": "",
  "phases": [
   {
@@ -51,6 +51,7 @@
   "sea": 2,
   "overture_buildings": 4682,
   "building": 79359,
+  "tree_sat": 91036,
   "tree": 1602,
   "businesses": 11509,
   "search_entries": 15876

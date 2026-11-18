@@ -41,7 +41,7 @@ export function updateHealth(dt, vehicles) {
   if (!G || !G.player) return; if (inv > 0) inv -= dt;
   if (G.deadT > 0) {
     G.deadT -= dt; const ov = document.getElementById('dead');
-    if (ov) ov.textContent = `${ov.dataset.why === 'splash' ? '💦 You got splatted!' : '🚑 Knocked out!'} Back in ${Math.max(1, Math.ceil(G.deadT))}…`;
+    if (ov) ov.textContent = G.dubai ? `WASTED · back in ${Math.max(1, Math.ceil(G.deadT))}…` : `${ov.dataset.why === 'splash' ? '💦 You got splatted!' : '🚑 Knocked out!'} Back in ${Math.max(1, Math.ceil(G.deadT))}…`;
     if (G.deadT <= 0) respawn(ov ? ov.dataset.why : ''); return;
   }
   if ((regenT -= dt) <= 0 && G.hp < 100) { G.hp = Math.min(100, G.hp + dt * 3); draw(); }

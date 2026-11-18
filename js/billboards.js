@@ -21,19 +21,59 @@ function wardTexture(n, councillor) {
   g.font = '500 30px "Segoe UI", Roboto, Arial, sans-serif'; g.fillStyle = 'rgba(255,255,255,0.8)'; g.fillText('Calgary · YYC Story', 512, 372);
   t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; TEX.set(n, t); return t;
 }
+// ---------------------------------------------------------------- Dubai: advertising boards along the main roads
+// "Your brand here" on half of them (ad space in the game), the game's own and Hassan's brands on the rest
+const ADS = [
+  { bg: ['#0b1220', '#1b2a44'], bar: '#f5c542', big: 'YOUR BRAND HERE', sub: 'Advertise in Dubai City Stories', foot: 'This billboard is for rent', col: '#f5c542' },
+  { bg: ['#7a0c1a', '#c8102e'], bar: '#ffffff', big: 'YOUR BRAND HERE', sub: 'Seen by every driver on this road', foot: 'Dubai City Stories · ad space', col: '#ffffff' },
+  { bg: ['#06363a', '#0b7a75'], bar: '#ffd76a', big: 'DUBAI CITY STORIES', sub: 'The real Dubai. Your story.', foot: 'A game by Hassan Ali', col: '#ffffff' },
+  { bg: ['#101010', '#2a2a2a'], bar: '#e8c9a0', big: 'KAELBY', sub: 'Shop online · kaelby.com', foot: 'Delivered to your door', col: '#f3e3cc' },
+  { bg: ['#1a1038', '#5a2ea0'], bar: '#ff5ac8', big: 'PROJECT HIP HOP DESI', sub: 'New music on YouTube', foot: '@projecthiphopdesi', col: '#ffffff' },
+  { bg: ['#0c2a4a', '#1f6fb5'], bar: '#7fe0ff', big: 'DUBAI INSIGHT', sub: 'The city in numbers', foot: 'Open data, made clear', col: '#ffffff' },
+  { bg: ['#2a1a05', '#a8741a'], bar: '#fff1c0', big: 'YOUR BRAND HERE', sub: 'Put your business on the map', foot: 'Dubai City Stories · ad space', col: '#fff1c0' },
+];
+function adTexture(i) {
+  const key = 'ad' + i; let t = TEX.get(key); if (t) return t; const a = ADS[i % ADS.length];
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 432; const g = c.getContext('2d');
+  const grd = g.createLinearGradient(0, 0, 1024, 432); grd.addColorStop(0, a.bg[0]); grd.addColorStop(1, a.bg[1]); g.fillStyle = grd; g.fillRect(0, 0, 1024, 432);
+  g.fillStyle = a.bar; g.fillRect(0, 0, 1024, 14); g.fillRect(0, 418, 1024, 14); g.fillRect(60, 252, 904, 4);
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = a.col;
+  let fs = 128; g.font = `900 ${fs}px "Segoe UI", Roboto, Arial, sans-serif`; while (g.measureText(a.big).width > 930 && fs > 50) { fs -= 4; g.font = `900 ${fs}px "Segoe UI", Roboto, Arial, sans-serif`; }
+  g.fillText(a.big, 512, 150);
+  g.font = '700 52px "Segoe UI", Roboto, Arial, sans-serif'; g.fillStyle = '#ffffff'; g.fillText(a.sub, 512, 310);
+  g.font = '500 30px "Segoe UI", Roboto, Arial, sans-serif'; g.fillStyle = 'rgba(255,255,255,0.8)'; g.fillText(a.foot, 512, 374);
+  t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; TEX.set(key, t); return t;
+}
+// one board about every 500 m along the motorways and main roads, on the right of the traffic and facing it
+export function dubaiBoards(world, roofAt) {
+  const out = [], G = new Map(), far = (x, y) => { const k = Math.floor(x / 350) + ',' + Math.floor(y / 350); if (G.has(k)) return false; G.set(k, 1); return true; };
+  let n = 0;
+  for (const r of world.overview || []) {
+    if (![1, 2, 3].includes(r.c) || r.p.length < 2) continue; let acc = 180 + (n * 97) % 240;
+    for (let i = 1; i < r.p.length; i++) {
+      const a = r.p[i - 1], b = r.p[i], l = Math.hypot(b[0] - a[0], b[1] - a[1]); if (l < 1) continue; acc += l;
+      if (acc < 520) continue; acc = 0;
+      const dx = (b[0] - a[0]) / l, dy = (b[1] - a[1]) / l, off = (r.c === 1 ? 17 : 12), x = (a[0] + b[0]) / 2 + dy * off, y = (a[1] + b[1]) / 2 - dx * off;
+      if (!far(x, y)) continue;
+      out.push({ x, y, h: Math.atan2(-dx, -dy), ad: (n * 5 + (n % 2 ? 0 : 3)) % ADS.length, roofAt }); n++;
+    }
+  }
+  return out;
+}
 const postMat = new THREE.MeshLambertMaterial({ color: 0x5f656b }), backMat = new THREE.MeshLambertMaterial({ color: 0x2b2f34 });
 export class Billboards {
-  constructor(scene) { this.scene = scene; this.items = (DATA ? DATA.boards : []).map(b => ({ ...b, g: null })); this.t = 0; }
+  constructor(scene, boards = null) { this.scene = scene; this.items = (boards || (DATA ? DATA.boards : [])).map(b => ({ ...b, g: null })); this.t = 0; }
   update(dt, px, py, night) {
     if ((this.t -= dt) > 0) return; this.t = 1;
     for (const b of this.items) {
       const d = Math.hypot(b.x - px, b.y - py);
-      if (d < 1200 && !b.g) {
+      if (d < 1200 && !b.g && !b.bad) {
+        if (b.roofAt) { if (d > 420) continue; if ([[0, 0], [5, 0], [-5, 0], [0, 5], [0, -5]].some(([ox, oy]) => b.roofAt(b.x + ox, b.y + oy) != null)) { b.bad = true; continue; } }      // never inside a building
         const g = b.g = new THREE.Group(), gy = ground(b.x, b.y);
         g.position.set(b.x, gy, -b.y); g.rotation.y = rotY(b.h);
         for (const x of [-3.6, 3.6]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.45, 7, 0.45), postMat); p.position.set(x, 3.5, -0.3); p.castShadow = true; g.add(p); }
         const back = new THREE.Mesh(new THREE.BoxGeometry(12.4, 5.4, 0.3), backMat); back.position.set(0, 9.3, -0.3); back.castShadow = true; g.add(back);
-        b.mat = new THREE.MeshBasicMaterial({ map: wardTexture(b.ward, b.councillor), toneMapped: false });
+        b.mat = new THREE.MeshBasicMaterial({ map: b.ad != null ? adTexture(b.ad) : wardTexture(b.ward, b.councillor), toneMapped: false });
         const face = new THREE.Mesh(new THREE.PlaneGeometry(12, 5.06), b.mat); face.position.set(0, 9.3, -0.14); g.add(face);
         this.scene.add(g);
       } else if (d > 1500 && b.g) { this.scene.remove(b.g); b.g = null; }

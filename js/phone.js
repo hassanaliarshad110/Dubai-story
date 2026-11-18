@@ -52,6 +52,7 @@ function openPhoneDubai() {
     <button class="app" data-app="map"><i style="background:#7a3fa0">🗺️</i>Map</button>
     <button class="app" data-app="biz"><i style="background:#b8432f">🛍️</i>Nearby</button>
     <button class="app" data-app="metro"><i style="background:#d7262e">🚇</i>Metro &amp; bus</button>
+    <button class="app" data-app="burj"><i style="background:#1a1038">🎆</i>Burj show</button>
     <button class="app" data-app="real"><i style="background:#0b7a75">📷</i>Real photos</button>
     <button class="app" data-app="settings"><i style="background:#555">⚙️</i>Settings</button></div>
     <p style="font-size:12px;color:#5b6573;margin-top:22px">In the real UAE: <b>999</b> police · <b>998</b> ambulance · <b>997</b> fire</p>`);
@@ -63,6 +64,10 @@ function openPhoneDubai() {
     if (a === 'goto') appGotoDubai();
     if (a === 'biz') appBiz();
     if (a === 'metro') appMetroDubai();
+    if (a === 'burj' && game.burj && !game.burj.off) {       // straight to the lake at night, facing the tower
+      const B = game.burj, fx = B.fx ?? B.x, fy = B.fy ?? B.y - 300, vx = fx + (fx - B.x) * 0.35, vy = fy + (fy - B.y) * 0.35;
+      closePhone(); game.clock = 20.5; game.teleport(vx, vy, Math.atan2(B.x - vx, B.y - vy)); toast('🎆 Burj Khalifa light and laser show, with the Dubai Fountain');
+    }
   });
 }
 function appMetroDubai() {

@@ -702,6 +702,61 @@ def main():
             if len(ring) >= 3:
                 T.add(ix, iy, L_BLD, kk, fl, h * 10, mh * 10, name_of(t), [ring]); stats['building'] += 1
 
+    # ---- boundary walls: around villa compounds (one wall round each group of homes, a gate gap by every home),
+    #      and round schools, hospitals and mosques' grounds. Real walls and fences mapped in OpenStreetMap are kept as well.
+    try:
+        from shapely.strtree import STRtree as _STW
+        from shapely.ops import nearest_points
+        homes, others = [], []
+        for geom, t, is_part in bld:
+            if is_part or not inside(geom): continue
+            k = bld_kind(t); h, _mh = bld_height(t, k); a = geom.area
+            if (k in (1, 18, 19) or (k == 14 and a < 700)) and 60 <= a <= 1200 and h < 14: homes.append(geom)
+            else: others.append(geom)
+        road_u = unary_union(road_polys) if road_polys else None
+        road_lines_w = [g.exterior for g in polys_of(road_u)] if road_u is not None else []
+        ridx_w = _STW(road_lines_w) if road_lines_w else None
+        oidx_w = _STW(others) if others else None
+        plots = unary_union([g.minimum_rotated_rectangle.buffer(3.2, join_style=2) for g in homes]) if homes else None
+        if plots is not None and road_u is not None: plots = plots.difference(road_u.buffer(0.8))
+        hidx = _STW(homes) if homes else None
+        nwall = [0]
+        def emit(line, kind=2):
+            for ln in (line.geoms if hasattr(line, 'geoms') else [line]):
+                if ln.is_empty or ln.geom_type != 'LineString' or ln.length < 3: continue
+                ln = ln.simplify(0.25); T.line(L_BARR, kind, 0, 15, 0, None, list(ln.coords)); nwall[0] += 1
+        for blk in polys_of(plots):
+            if blk.area < 150: continue
+            ring = LineString(blk.exterior.coords); gaps = []
+            for i in (hidx.query(blk, predicate='intersects') if hidx is not None else []):
+                c = homes[i].centroid
+                if ridx_w is not None:        # the gate faces the nearest road
+                    rl = road_lines_w[ridx_w.nearest(c)]; c = nearest_points(rl, c)[0]
+                gaps.append(ring.interpolate(ring.project(c)).buffer(2.0))
+            wall = ring.difference(unary_union(gaps)) if gaps else ring
+            if oidx_w is not None:
+                hit = [others[i] for i in oidx_w.query(ring, predicate='intersects')]
+                if hit: wall = wall.difference(unary_union(hit).buffer(0.4))
+            emit(wall)
+        # grounds of schools, hospitals, places of worship
+        for w in ways:
+            t = w.get('tags', {})
+            if t.get('building') or w['nodes'][0] != w['nodes'][-1]: continue
+            if t.get('amenity') not in ('school', 'kindergarten', 'college', 'university', 'hospital', 'place_of_worship') and t.get('landuse') not in ('education', 'religious'): continue
+            g = way_poly(w)
+            if g is None or g.area < 800 or g.area > 400000 or not inside(g): continue
+            for p in polys_of(g.buffer(-0.6)):
+                ring = LineString(p.exterior.coords); gaps = []
+                if ridx_w is not None:
+                    c = p.centroid; rl = road_lines_w[ridx_w.nearest(c)]; gaps.append(ring.interpolate(ring.project(nearest_points(rl, c)[0])).buffer(4.0))
+                wall = ring.difference(unary_union(gaps)) if gaps else ring
+                if road_u is not None: wall = wall.difference(road_u)
+                emit(wall)
+        stats['walls'] = nwall[0]
+        print('boundary walls:', nwall[0])
+    except Exception as ex:
+        import traceback; traceback.print_exc(); print('boundary walls failed:', ex)
+
     # ---- trees seen from space (ESA WorldCover tree cover, 10 m): off the roads and out of the buildings
     if args.trees and os.path.exists(args.trees):
         import numpy as np, shapely
@@ -754,7 +809,8 @@ def main():
         for nm, x, y, ar in named:
             low = nm.lower()
             if any(p in low for p in pats) and extent.buffer(200).contains(Point(x, y)):
-                if best is None or ar > best[2]: best = (x, y, ar)
+                sc = (2 if low == label.lower() or low in pats else 1, ar)
+                if best is None or sc > best[2]: best = (x, y, sc)
         if best: landmarks.append({'label': label, 'x': round(best[0]), 'y': round(best[1]), 'downtown': False, 'full': False})
     print('Landmarks found:', ', '.join(l['label'] for l in landmarks) or 'none')
 

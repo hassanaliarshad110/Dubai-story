@@ -2,7 +2,7 @@
 // plus lookups (which community / ward am I in, nearest place of a kind).
 import * as THREE from 'three';
 import { MAT } from './materials.js?v=11112231';
-import { buildFlat, buildRibbons, buildBuildings, buildB3D, AREA_COL, AREA_Y } from './tiles.js?v=11112231';
+import { buildFlat, buildRibbons, buildBuildings, buildB3D, AREA_COL, AREA_Y, BLD_O } from './tiles.js?v=11112231';
 import { TER, ground } from './terrain.js?v=11112231';
 
 export function toLatLon(world, x, y) {
@@ -51,10 +51,11 @@ export function buildWorldMeshes(scene, world) {
   if (gr) { const fr = new THREE.MeshLambertMaterial({ color: 0x55585c, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); const m = new THREE.Mesh(gr, TER.on ? MAT.far(fr) : fr); m.renderOrder = 3; g.add(m); }
   // skyline: every building 38 m or taller, always drawn so downtown is visible from across the city
   const sky = world.b3d ? [] : world.skyline.map(s => ({ kind: s.k, flags: 0, a: s.h * 10, b: s.mh * 10, rings: flatRings([s.r]) }));      // with the City's 3D models, loadSky3D draws them
+  BLD_O.x = 0; BLD_O.y = 0;
   const { geos } = buildBuildings(sky, false);
   for (const [k, geo] of Object.entries(geos)) {
     if (!geo) continue;
-    const m = new THREE.Mesh(geo, k === 'roof' ? MAT.roof : k.startsWith('house') ? MAT.wallHouses[+k.slice(5) || 0] : k === 'apt' ? MAT.wallApt : k === 'comm' ? MAT.wallComm : k === 'shop' ? MAT.wallShop : MAT.wallTower);
+    const m = new THREE.Mesh(geo, k === 'roof' || k === 'trim' ? MAT.roof : k.startsWith('house') ? MAT.wallHouses[+k.slice(5) || 0] : k === 'apt' ? MAT.wallApt : k === 'comm' ? MAT.wallComm : k === 'shop' ? MAT.wallShop : MAT.wallTower);
     m.castShadow = true; m.receiveShadow = true; g.add(m);
   }
   scene.add(g);

@@ -22,7 +22,8 @@ const WORN = [{ skin: 0xc49a76, shirt: 0x4a4a3a, pants: 0x3a3a34, hair: 0x5a4a3a
 const DOWNTOWN = { x: 0, y: 200, r: 1900 };
 
 export class People {
-  constructor(scene, tiles, { max = 16, maxDowntown = 40 } = {}) {
+  constructor(scene, tiles, { max = 16, maxDowntown = 40, camps = true } = {}) {
+    this.camps_on = camps;
     this.scene = scene; this.tiles = tiles; this.max = max; this.maxDT = maxDowntown;
     this.walkers = []; this.pool = []; this.t = 0;
     this.camps = []; this.campTiles = new Set(); this.near = null;
@@ -55,14 +56,15 @@ export class People {
       if (d < 35 || d > 130) continue;
       let ch = this.pool.pop();
       if (ch && !ch.mixer && humanReady(NPCS[0])) ch = null;          // the realistic people have arrived: retire the simple ones
-      if (!ch) { ch = new Character(LOOKS[Math.floor(Math.random() * LOOKS.length)]); }
+      let cop = false; if (!ch) { const lk = LOOKS[Math.floor(Math.random() * LOOKS.length)]; ch = new Character(lk); cop = lk.glb === 'police_officer'; ch.g.userData.cop = cop; } else cop = !!ch.g.userData.cop;
+      ch.g.rotation.set(0, 0, 0);
       this.scene.add(ch.g);
-      this.walkers.push({ ch, s, u, dir: Math.random() < 0.5 ? 1 : -1, sp: 1.1 + Math.random() * 0.5, t, pause: 0 });
+      this.walkers.push({ ch, s, u, dir: Math.random() < 0.5 ? 1 : -1, sp: 1.1 + Math.random() * 0.5, t, pause: 0, cop });
       return;
     }
   }
   update(dt, px, py) {
-    const dd = Math.hypot(px - DOWNTOWN.x, py - DOWNTOWN.y), want = dd < DOWNTOWN.r ? this.maxDT : this.max;
+    const dd = Math.hypot(px - DOWNTOWN.x, py - DOWNTOWN.y), want = this.camps_on ? (dd < DOWNTOWN.r ? this.maxDT : this.max) : this.maxDT;
     this.t -= dt;
     if (this.t <= 0) { this.t = 0.15; if (this.walkers.length < want) this.spawn(px, py); }
     for (let i = this.walkers.length - 1; i >= 0; i--) {
@@ -79,13 +81,21 @@ export class People {
           for (let k = 0; k < 40 && !next; k++) { const c = S[Math.floor(Math.random() * S.length)]; if (c === s) continue; if (Math.hypot(c[0] - ex, c[1] - ey) < 4) { next = [c, 0, 1]; } else if (Math.hypot(c[2] - ex, c[3] - ey) < 4) next = [c, 1, -1]; }
           if (next) { w.s = next[0]; w.u = next[1]; w.dir = next[2]; } else { w.dir = -w.dir; w.u = Math.max(0, Math.min(1, w.u)); if (Math.random() < 0.3) w.pause = 1 + Math.random() * 3; }
         }
-        if (far < 90 || Math.random() < 0.5) w.ch.animate(far < 90 ? dt : dt * 2, { speed: w.sp });
+        if (w.panic > 0 && (w.panic -= dt) <= 0) w.sp = 1.1 + Math.random() * 0.5;      // calm down again
+        if (far < 90 || Math.random() < 0.5) w.ch.animate(far < 90 ? dt : dt * 2, { speed: w.sp, run: w.panic > 0 });
       }
       const s2 = w.s; x = s2[0] + (s2[2] - s2[0]) * w.u; y = s2[1] + (s2[3] - s2[1]) * w.u;
       const h = Math.atan2((s2[2] - s2[0]) * w.dir, (s2[3] - s2[1]) * w.dir);
       w.ch.g.position.set(x, standY(x, y) + 0.05, -y); w.ch.g.rotation.y = Math.PI - h;
     }
-    this.updateCamps(dt, px, py);
+    if (this.camps_on) this.updateCamps(dt, px, py);
+  }
+  // someone jumps out and runs (a driver thrown out of a car)
+  flee(x, y) {
+    const t = this.tiles.tileAt(x, y); if (!t || !t.group || !t.layers) return; const S = this.segs(t); let best = null, bd = 60, bu = 0;
+    for (const s of S) { const dx = s[2] - s[0], dy = s[3] - s[1], l2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((x - s[0]) * dx + (y - s[1]) * dy) / l2)), d = Math.hypot(s[0] + dx * u - x, s[1] + dy * u - y); if (d < bd) { bd = d; best = s; bu = u; } }
+    if (!best) return; const ch = new Character(LOOKS[Math.floor(Math.random() * (LOOKS.length - 1))]); this.scene.add(ch.g);
+    this.walkers.push({ ch, s: best, u: bu, dir: Math.random() < 0.5 ? 1 : -1, sp: 4.8, t, pause: 0, panic: 14 });
   }
   // ---------------------------------------------------------------- shelter under the downtown bridges
   updateCamps(dt, px, py) {

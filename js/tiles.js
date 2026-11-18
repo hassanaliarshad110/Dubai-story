@@ -6,6 +6,24 @@ import { TER, ground, gl } from './terrain.js?v=11112231';
 
 // Dubai City Stories: the look of a Gulf city (flat roofs, sand, stone and glass); set from world.cityId at boot
 export const STYLE = { dubai: false };
+// where the buildings being built sit in the world (tile origin), and the satellite's colour of the ground there
+export const BLD_O = { x: 0, y: 0 };
+export const SAT = { px: new Map(), rg: 8000, n: 400, on: false };
+export async function loadSatColours(world) {      // data/s2/<region>.jpg, kept small (20 m a pixel) for roof and wall tints
+  if (!world.s2) return; const s = world.s2, jobs = [];
+  for (let rx = Math.floor(s.x0 / SAT.rg); rx <= Math.floor((s.x0 + s.w) / SAT.rg); rx++) for (let ry = Math.floor((s.y1 - s.h) / SAT.rg); ry <= Math.floor(s.y1 / SAT.rg); ry++) {
+    jobs.push(new Promise(res => { const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = SAT.n; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0, SAT.n, SAT.n); SAT.px.set(rx + '_' + ry, g.getImageData(0, 0, SAT.n, SAT.n).data); } catch (e) { } res(); }; im.onerror = () => res(); im.src = 'data/s2/' + rx + '_' + ry + '.jpg'; }));
+  }
+  await Promise.all(jobs); SAT.on = SAT.px.size > 0;
+}
+const _sat = new THREE.Color();
+export function satColour(x, y) {
+  if (!SAT.on) return null; const rx = Math.floor(x / SAT.rg), ry = Math.floor(y / SAT.rg), d = SAT.px.get(rx + '_' + ry); if (!d) return null;
+  const u = Math.min(SAT.n - 1, Math.floor((x - rx * SAT.rg) / SAT.rg * SAT.n)), v = Math.min(SAT.n - 1, Math.floor(((ry + 1) * SAT.rg - y) / SAT.rg * SAT.n)), i = (v * SAT.n + u) * 4;
+  return _sat.setRGB(d[i] / 255, d[i + 1] / 255, d[i + 2] / 255, THREE.SRGBColorSpace);
+}
+const AC_C = new THREE.Color(0xb9bcc0), TANK_C = new THREE.Color(0xf2f2ee), SOLAR_C = new THREE.Color(0x27384d), SPIRE_C = new THREE.Color(0xc9d2da);
+function inRing(pts, x, y) { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const a = pts[i], b = pts[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1] + 1e-9) + a[0]) c = !c; } return c; }
 export const L = { BLD: 1, ROAD: 2, PATH: 3, RAIL: 4, AREA: 5, WATER: 6, WWAY: 7, POI: 8, STOP: 9, BARR: 10, TREE: 11 };
 const dec = new TextDecoder();
 
@@ -139,7 +157,7 @@ KCOL[18] = KCOL[1]; KCOL[19] = KCOL[1];
 const KCOL_DXB = {   // villas and low-rise in sand, cream and white stone; towers in glass and silver
   1: [0xe9dcc1, 0xf2ead8, 0xdcc8a4, 0xf6f3ea, 0xe3d2b0, 0xd9c4a0, 0xefe6d2], 2: [0xe2d5bb], 3: [0xe6e0d4, 0xd8cfbf, 0xc9d3da], 4: [0xeee6d6, 0xe2d6bf, 0xf4f1ea, 0xd6cbb6, 0xcfd6db],
   5: [0xd9d3c6, 0xc9c4b9, 0xe4e0d8], 6: [0xeadfca, 0xddd0b6], 7: [0xe8dcc4, 0xd8c9ab], 8: [0xf3efe6, 0xeae2d0], 9: [0xe6dcc8], 10: [0xcfcac0], 11: [0xe6e6e2], 12: [0xf0eee8],
-  13: [0xd8d2c4], 14: [0xe5dac4, 0xd9ccb2, 0xefe8da], 15: [0x9fb6c8, 0x8aa6bd, 0xb9c8d2, 0x7f9bb3, 0xc4d0d8], 16: [0xd9c9a4], 17: [0xe9e6df], 18: [0xe9dcc1, 0xf2ead8], 19: [0xe9dcc1, 0xdcc8a4]
+  13: [0xd8d2c4], 14: [0xe5dac4, 0xd9ccb2, 0xefe8da], 15: [0x6fa8d6, 0x4f9fb5, 0x8fc0dd, 0x5e86b8, 0xbfd6e2, 0x6fb5a0, 0xc9a56a, 0x3f6690, 0x9ad0e6, 0x7aa0c0], 16: [0xd9c9a4], 17: [0xe9e6df], 18: [0xe9dcc1, 0xf2ead8], 19: [0xe9dcc1, 0xdcc8a4]
 };
 const ROOF = { 1: [0x5a5550, 0x4a4643, 0x6b5a4c, 0x3f4245, 0x705f52, 0x2f3236, 0x7a6a5a, 0x4f5a4e, 0x8a5a44, 0x3d3a37], 2: [0x5a5550, 0x4a4643, 0x6b5a4c], 4: [0x6d6a66, 0x5b5754, 0x4a4643] };
 function pick(arr, h) { return arr[Math.floor(h * arr.length) % arr.length]; }
@@ -148,7 +166,7 @@ function hash2(x, y) { const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
 // house cladding by the year it was built (from the property assessment roll): 0 siding, 1 brick, 2 stucco, 3 stone accents
 const ERA_STYLE = { 1: [2, 2, 2, 0, 0], 2: [1, 1, 2, 2, 2, 0], 3: [0, 0, 0, 0, 2, 2, 3], 4: [3, 3, 3, 0, 0] };
 function wallGroup(k, h, hs, era) {
-  if (STYLE.dubai) { if (k === 15 || h > 30 || k === 17) return 'tower'; if (k === 6 && h < 9) return 'shop'; return (k === 1 || k === 2 || k === 18 || k === 19) && h < 5 ? 'comm' : (k === 3 || k === 5 || k === 9 || k === 10 || k === 13 || k === 14) ? 'comm' : 'apt'; }
+  if (STYLE.dubai) { if (k === 15 || h > 26 || k === 17 || (k === 3 && h > 14)) return 'tower'; if (k === 6 && h < 9) return 'shop'; return (k === 1 || k === 2 || k === 18 || k === 19) && h < 5 ? 'comm' : (k === 3 || k === 5 || k === 9 || k === 10 || k === 13 || k === 14) ? 'comm' : 'apt'; }
   if (k === 15 || (k === 3 && h > 25) || (k === 4 && h > 30) || k === 17) return 'tower';
   if (k === 4) return 'apt';
   if (k === 6 && h < 9) return 'shop';
@@ -173,8 +191,10 @@ export function buildBuildings(feats, skylineSkip = true, roads = []) {
     const hb = TER.on ? Math.min(...pts.map(p => gl(p[0], p[1]))) - 0.1 : 0;       // sits on the lowest corner of its lot
     for (const key in G) G[key].lift = hb; G.drive.lift = null;
     tmpC.setHex(pick((STYLE.dubai ? KCOL_DXB : KCOL)[k] || (STYLE.dubai ? KCOL_DXB : KCOL)[14], hs));
-    const wc = tmpC.clone();
     const era = (f.flags >> 5) & 7, wg = wallGroup(k, h, hs, era), grp = G[wg];
+    const sat = STYLE.dubai ? satColour(cx + BLD_O.x, cy + BLD_O.y) : null, area = STYLE.dubai ? Math.abs(ringArea(f.rings[0])) : 0;
+    if (sat && wg !== 'tower') tmpC.lerp(sat, 0.3);            // low-rise walls lean toward what the satellite sees there
+    const wc = tmpC.clone();
     let per = 0;
     for (let i = 0; i < pts.length; i++) {
       const a = pts[i], b = pts[(i + 1) % pts.length];
@@ -192,6 +212,7 @@ export function buildBuildings(feats, skylineSkip = true, roads = []) {
     const pitched = !STYLE.dubai && (k === 1 || k === 2 || k === 18 || k === 19 || (k === 4 && h < 14)) && pts.length <= (k === 19 ? 16 : 12);
     tmpC.setHex(pitched ? pick(ROOF[k] || ROOF[1], hs * 7 % 1) : 0x8d8a85);
     if (!pitched && k === 15) tmpC.setHex(0x6c7884);
+    if (sat) { if (wg === 'tower') tmpC.setHex(0x8f9aa4).lerp(sat, 0.35); else tmpC.copy(sat).lerp(_white, 0.12); }      // Dubai: the roof's real colour, seen from space
     const rc = tmpC.clone();
     if (pitched) {
       const rise = k === 2 ? 0.9 : era === 2 && k === 1 ? Math.min(1.6, 0.8 + Math.sqrt(Math.abs(ringArea(f.rings[0]))) * 0.06) : Math.min(3.2, 1.2 + Math.sqrt(Math.abs(ringArea(f.rings[0]))) * 0.12), s = 0.3;
@@ -223,12 +244,54 @@ export function buildBuildings(feats, skylineSkip = true, roads = []) {
       addCap(R, inner, h + rise, rc);
       if (house) houseDetails(G, pts, h, rise, cx, cy, hs, nearRoad, inner, k);
       else if (k === 2) garageDoor(G, pts, h, cx, cy, nearRoad);
-    } else addCap(R, pts, h, rc);
+    } else if (STYLE.dubai) dubaiRoof(G, grp, R, pts, h, mh, cx, cy, hs, area, wg, wc, rc, skylineSkip);
+    else addCap(R, pts, h, rc);
   }
   for (const key in G) G[key].lift = null;
   return { geos: Object.fromEntries(Object.entries(G).map(([k, g]) => [k, g.build()])), coll };
 }
 
+const _white = new THREE.Color(0xffffff);
+// Dubai roofs: a parapet rim, then what is really up there: stair rooms, water tanks, AC units, solar panels on the big
+// sheds; towers get a set-back crown (and the tallest a spire)
+function ringWalls(grp, pts, y0, y1, c, flip = false) {
+  let per = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = flip ? pts[(i + 1) % pts.length] : pts[i], b = flip ? pts[i] : pts[(i + 1) % pts.length], dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy); if (len < 0.05) continue;
+    const nx = dy / len, nz = dx / len, u0 = per / 4, u1 = (per + len) / 4; per += len;
+    const i0 = grp.v(a[0], y0, -a[1], nx, 0, nz, u0, y0 / 3.5, c), i1 = grp.v(b[0], y0, -b[1], nx, 0, nz, u1, y0 / 3.5, c), i2 = grp.v(b[0], y1, -b[1], nx, 0, nz, u1, y1 / 3.5, c), i3 = grp.v(a[0], y1, -a[1], nx, 0, nz, u0, y1 / 3.5, c);
+    grp.idx.push(i0, i1, i2, i0, i2, i3);
+  }
+}
+function dubaiRoof(G, grp, R, pts, h, mh, cx, cy, hs, area, wg, wc, rc, near) {
+  const simple = pts.length <= 14;
+  if (wg === 'tower' && h >= 38) {
+    if (simple && area > 150 && area < 9000) {            // crown: one or two set-backs, glass like the tower
+      const s1 = 0.72 + hs * 0.12, c1 = Math.min(14, 3 + h * 0.05), in1 = pts.map(p => [cx + (p[0] - cx) * s1, cy + (p[1] - cy) * s1]);
+      addCap(R, pts, h, rc); ringWalls(grp, in1, h, h + c1, wc);
+      if (h > 90 && hs > 0.35) { const in2 = pts.map(p => [cx + (p[0] - cx) * s1 * 0.6, cy + (p[1] - cy) * s1 * 0.6]), c2 = c1 * 0.8; addCap(R, in1, h + c1, rc); ringWalls(grp, in2, h + c1, h + c1 + c2, wc); addCap(R, in2, h + c1 + c2, rc); if (h > 150) boxG(R, cx, cy, 1.2, 1.2, h + c1 + c2, h + c1 + c2 + h * (0.06 + hs * 0.08), SPIRE_C); }
+      else addCap(R, in1, h + c1, rc);
+    } else addCap(R, pts, h, rc);
+    return;
+  }
+  // parapet: the walls run 0.6 m past the roof, with the roof deck sitting inside
+  if (near && simple && area > 40 && area < 4000) {
+    const inner = offsetRing(pts, -0.3); addCap(R, pts, h, rc);
+    if (inner && inner.length === pts.length) { ringWalls(G.trim, pts, h, h + 0.6, wc); ringWalls(G.trim, inner, h, h + 0.6, wc, true); }
+  } else addCap(R, pts, h, rc);
+  if (!near || area < 60 || mh > 0) return;
+  const T = G.trim, spot = (i, m) => { for (let k = 0; k < 6; k++) { const a = (hs * 7 + i * 2.4 + k * 1.1) % 6.283, r = Math.sqrt(area) * (0.12 + ((hs * 13 + i * 0.37 + k * 0.21) % 1) * 0.22), x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r; if (inRing(pts, x, y) && inRing(pts, x + m, y + m) && inRing(pts, x - m, y - m) && inRing(pts, x + m, y - m) && inRing(pts, x - m, y + m)) return [x, y]; } return null; };
+  if (area < 900) {                                        // villas and small blocks: stair room, water tank, a split AC or two
+    const a = spot(0, 2.2); if (a) boxG(T, a[0], a[1], 3, 3.4, h, h + 2.5, wc);
+    const b = spot(1, 1); if (b) boxG(T, b[0], b[1], 1.3, 1.3, h + 0.2, h + 1.6, TANK_C);
+    if (hs > 0.4) { const c = spot(2, 0.8); if (c) boxG(T, c[0], c[1], 1.1, 0.8, h, h + 0.8, AC_C); }
+  } else {                                                 // big roofs: rows of AC plant, a lift room, solar on some sheds
+    const n = Math.min(10, Math.floor(area / 320));
+    for (let i = 0; i < n; i++) { const p = spot(i, 2); if (p) boxG(T, p[0], p[1], 2.6, 1.6, h, h + 1.3, AC_C); }
+    const l = spot(11, 3); if (l) boxG(T, l[0], l[1], 4.5, 4.5, h, h + 3, wc);
+    if (hs > 0.6 && area > 2500) { for (let i = 0; i < 6; i++) { const p = spot(20 + i, 4); if (p) boxG(T, p[0], p[1], 7, 3.6, h + 0.25, h + 0.4, SOLAR_C); } }
+  }
+}
 // ---------------------------------------------------------------- City of Calgary 3D buildings (LiDAR roofs, tools/build_b3d.py)
 // one tile blob -> wall and roof geometry by material, like buildBuildings. skipTall: leave the 38 m+ towers to the skyline.
 const FLAT_ROOF = new THREE.Color(0x8d8a85), GLASS_ROOF = new THREE.Color(0x6c7884), BLACK_C = new THREE.Color(0x000000);
@@ -443,6 +506,25 @@ function quad(G, a, b, y0, y1, nx, nz, u0, u1, c, off = 0.03) {        // vertic
   const i0 = G.v(a[0] + ox, y0, -a[1] + oz, nx, 0, nz, u0, 0, c), i1 = G.v(b[0] + ox, y0, -b[1] + oz, nx, 0, nz, u1, 0, c);
   const i2 = G.v(b[0] + ox, y1, -b[1] + oz, nx, 0, nz, u1, 1, c), i3 = G.v(a[0] + ox, y1, -a[1] + oz, nx, 0, nz, u0, 1, c);
   G.idx.push(i0, i1, i2, i0, i2, i3);
+}
+// boundary walls, fences and hedges (L.BARR): kind 1 fence, 2 wall, 3 hedge, 4 retaining wall
+const BARR = { 1: [1.7, 0.08, 0x6e737a], 2: [2.2, 0.26, 0xe6dcc6], 3: [1.3, 0.8, 0x4f7a3a], 4: [1.4, 0.35, 0xb9b2a4] };
+function buildWalls(feats) {
+  const G = new GeoBuilder(), c = new THREE.Color();
+  for (const f of feats) {
+    const B = BARR[f.kind] || BARR[2], r = f.rings[0], n = r.length / 2, hgt = B[0], th = B[1] / 2; if (n < 2) continue;
+    c.setHex(B[2]); if (f.kind === 2) { const k = 0.9 + hash2(r[0], r[1]) * 0.14; c.multiplyScalar(k); }
+    const cc = c.clone(), top = cc.clone().multiplyScalar(0.93);
+    for (let i = 1; i < n; i++) {
+      const a = [r[i * 2 - 2], r[i * 2 - 1]], b = [r[i * 2], r[i * 2 + 1]], ex = b[0] - a[0], ey = b[1] - a[1], l = Math.hypot(ex, ey); if (l < 0.2) continue;
+      const nx = ey / l, nz = ex / l;
+      quad(G, a, b, 0, hgt, nx, nz, 0, l / 3, cc, th); quad(G, b, a, 0, hgt, -nx, -nz, 0, l / 3, cc, th);
+      const ox = nx * th, oy = -nz * th, base = G.n;        // (nx, nz) in three's x/z is (nx, -nz) on the map
+      G.v(a[0] + ox, hgt, -(a[1] + oy), 0, 1, 0, 0, 0, top); G.v(b[0] + ox, hgt, -(b[1] + oy), 0, 1, 0, 0, 0, top); G.v(b[0] - ox, hgt, -(b[1] - oy), 0, 1, 0, 0, 0, top); G.v(a[0] - ox, hgt, -(a[1] - oy), 0, 1, 0, 0, 0, top);
+      G.idx.push(base, base + 1, base + 2, base, base + 2, base + 3, base, base + 2, base + 1, base, base + 3, base + 2);
+    }
+  }
+  return G.build();
 }
 function boxG(G, x, y, w, d, y0, y1, c) {      // axis-aligned box (map coords x/y, heights y0..y1)
   const P = [[x - w / 2, y - d / 2], [x + w / 2, y - d / 2], [x + w / 2, y + d / 2], [x - w / 2, y + d / 2]];
@@ -1300,6 +1382,7 @@ export class TileManager {
         fill = missingFootprints(layers[L.BLD], t.roofs3d, ox, oy); t.camBld = fill;
         if (fill.length) fill = buildBuildings(fill, true, layers[L.ROAD]); else fill = null;
       }
+      BLD_O.x = ox; BLD_O.y = oy;
       const { geos, coll: rings } = !footOnly ? buildBuildings(layers[L.BLD], true, layers[L.ROAD]) : fill ? { geos: fill.geos, coll: fill.coll } : { geos: {}, coll: [] };
       const cs = !lite;
       for (let i = 0; i < 4; i++) add(geos['house' + i], MAT.wallHouses[i], { cs });
@@ -1308,6 +1391,7 @@ export class TileManager {
       else if (fill && rings.length) { const extra = buildCollision(rings); if (coll) { for (const [k, l] of extra.grid) { const c = coll.grid.get(k); if (c) c.push(...l); else coll.grid.set(k, l); } } else coll = extra; }
     }
     yield; if (gone()) return;
+    if (D && STYLE.dubai && layers[L.BARR]) add(buildWalls(layers[L.BARR]), MAT.concrete, { cs: true });
     if (layers[L.TREE]) {        // tree trunks block cars and people
       const tr = layers[L.TREE].map(f => { const x = f.rings[0][0], y = f.rings[0][1], s2 = 0.35; return [[x - s2, y - s2], [x + s2, y - s2], [x + s2, y + s2], [x - s2, y + s2]]; });
       if (coll) { const extra = buildCollision(tr); for (const [k, l] of extra.grid) { const c = coll.grid.get(k); if (c) c.push(...l); else coll.grid.set(k, l); } }

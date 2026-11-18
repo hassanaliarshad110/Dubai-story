@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { initMaterials, setNight, MAT } from './materials.js?v=11112231';
 import { setMaxAnisotropy } from './textures.js?v=11112231';
-import { TileManager, SPEED_LIMIT, loadTreeModels, TREE_M, STYLE, AREA_COL } from './tiles.js?v=11112231';
+import { TileManager, SPEED_LIMIT, loadTreeModels, TREE_M, STYLE, AREA_COL, loadSatColours } from './tiles.js?v=11112231';
+import { facadeTexture } from './textures.js?v=11112231';
 import { buildWorldMeshes, prepLookups, communityAt, wardAt, loadSky3D } from './world.js?v=11112231';
 import { Player, dirOf, angDiff, LOOKS } from './player.js?v=11112231';
 import { Traffic } from './traffic.js?v=11112231';
@@ -47,6 +48,7 @@ import { loadFields, Fields } from './fields.js?v=11112231';
 import { loadLyrics, updateLyrics } from './lyrics.js?v=11112231';
 import { GOOGLE_KEY } from './config.js?v=11112231';
 import { PhotoCity } from './photo.js?v=11112231';
+import { Crime } from './crime.js?v=11112231';
 import { music } from './music.js?v=11112231';
 window.__music = music;
 import { newHeli, idleHeli, syncHeli } from './heli.js?v=11112231';
@@ -60,7 +62,8 @@ import { People } from './people.js?v=11112231';
 import { initIntro } from './intro.js?v=11112231';
 import { CHARACTERS } from './stories.js?v=11112231';
 import { tr } from './i18n.js?v=11112231';
-import { Billboards, loadBillboards } from './billboards.js?v=11112231';
+import { Billboards, loadBillboards, dubaiBoards } from './billboards.js?v=11112231';
+import { BurjShow } from './burjshow.js?v=11112231';
 import { Navigator, loadRoute } from './route.js?v=11112231';
 import { setHalloweenNight } from './halloween.js?v=11112231';
 import { setCarLightsNight } from './carlights.js?v=11112231';
@@ -153,6 +156,13 @@ async function boot() {
     STYLE.dubai = true; MAT.base.color.setHex(0xbcb8af); if (MAT.baseFar && MAT.baseFar.color) MAT.baseFar.color.setHex(0xbcb8af);
     Object.assign(AREA_COL, { 1: 0xc9c3b6, 2: 0xc2bdb3, 3: 0xb5b0a7, 4: 0xc4bfb5, 16: 0xd2c3a0, 19: 0xb9b3a6, 22: 0xa9a8a4, 25: 0xbfb9a6, 9: 0x8fae5e });
     scene.fog.color.setHex(0xdfe2e3);
+    // glass towers: the bright curtain-wall texture, plus a sky sheen that grows at grazing angles (off at night)
+    const gm = MAT.wallTower; gm.map = facadeTexture('glass'); gm.userData.sheen = { value: 1 }; gm.userData.glow = 0.3;
+    gm.onBeforeCompile = sh => { sh.uniforms.uSheen = gm.userData.sheen;
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uSheen;').replace('#include <dithering_fragment>', `#include <dithering_fragment>
+        { float fr = 1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))); gl_FragColor.rgb += vec3(0.50, 0.68, 0.88) * (0.10 + 0.55 * fr * fr) * uSheen; }`); };
+    gm.customProgramCacheKey = () => 'dxbglass'; gm.needsUpdate = true;
+    await loadSatColours(world);
   }
   status('Shaping the hills…'); await loadTerrain();
   buildWorldMeshes(scene, world); if (!DXB) addMountains();
@@ -198,11 +208,12 @@ async function boot() {
   game.metro = new Metro(game, { toast, setPrompt, sfx }); game.music = music;
   if (!game.photoOn) game.platforms = buildPlatforms(scene, world, transit);       // a platform to stand on at every CTrain station
   game.buses = new Buses(game, { toast, setPrompt, sfx });
-  game.signals = new Signals(scene, traffic, { radius: mobile ? 180 : 260 }); game.billboards = new Billboards(scene); if (world.addr) game.numbers = new HouseNumbers(scene, tiles, { radius: 1 });
+  game.signals = new Signals(scene, traffic, { radius: mobile ? 180 : 260 }); game.billboards = new Billboards(scene, DXB ? dubaiBoards(world, (x, y) => tiles.roofAt(x, y)) : null); if (DXB) game.burj = new BurjShow(game, scene, world); if (world.addr) game.numbers = new HouseNumbers(scene, tiles, { radius: 1 });
   initHealth(game); game.sfx = sfx; traffic.onHitPlayer = (v, nx, ny) => hurt(Math.min(100, 10 + v * 4), nx, ny, 'car');
   game.mp = new Multiplayer(game, scene);       // play online: other players, chat and voice near you
   game.games = new Games(game, scene); game.games.show(false);
   if (!game.photoOn && !DXB) { game.life = new Life(game, scene, { mobile }); setTimeout(() => ['kid_boy', 'kid_girl', 'kid_boy2'].forEach(loadHuman), 8000); }     // children playing, rabbits and the odd bear in the parks
+  if (DXB) { game.people = new People(scene, tiles, { max: mobile ? 14 : 26, maxDowntown: mobile ? 14 : 26, camps: false }); game.crime = new Crime(game, scene); }
   if (!DXB) game.people = new People(scene, tiles, { max: Math.round((mobile ? 8 : 16) * QP().crowd), maxDowntown: Math.round((mobile ? 18 : 40) * QP().crowd) });
   initHUD(world, game); initPhone(game); initRealView(game); initInput(canvas);
   game.updateMoney();
@@ -250,7 +261,7 @@ function startGame(mode) {
   } else {
     placeStart(); if (mode === 'online') setObjective(tr('online'), 'Rival crews are out: first to 10 splats wins the round. Q switches weapon, F shoots.'); else setObjective(tr('freeTitle'), tr('freeText'));
     // free roam is online and peaceful (meet, ride together, race); 🌐 Play online adds the crews and the splat fights
-    game.mode = 'free'; if (game.games) { game.games.show(true); game.games.setFight(mode === 'online'); }
+    game.mode = 'free'; if (game.games) { game.games.show(!game.dubai); game.games.setFight(mode === 'online' && !game.dubai); }
     if (game.mp && !game.mp.on && !game.dubai) { let n = ''; try { n = localStorage.getItem('yyc-mp-name') || ''; } catch (e) { } setTimeout(() => game.mp.join(n || undefined), 1500); }
   }
   placeHeli();                             // a helicopter next to you, whichever way you start
@@ -442,7 +453,7 @@ onAction('vehicle', () => {
   }
   if (player.mode === 'foot') {
     const c = traffic.nearestCar(player.x, player.y, 5);
-    if (c) { traffic.take(c); player.enter(c); sfx.enter(); music.radio(true); $('#speed').hidden = false; toast(c === game.familyCar ? 'The family car' : player.onBike ? 'On the motorbike. Helmet on, ride safely!' : 'Hopped in. Drive safely!'); }
+    if (c) { if (game.crime) game.crime.stole(c); traffic.take(c); player.enter(c); sfx.enter(); music.radio(true); $('#speed').hidden = false; toast(c === game.familyCar ? 'The family car' : player.onBike ? 'On the motorbike. Helmet on, ride safely!' : 'Hopped in. Drive safely!'); }
     else toast('No car close by. Walk up to a parked car.');
   } else if (player.mode === 'car') { const c = player.exit(); traffic.release(c); sfx.enter(); $('#speed').hidden = true; }
 });
@@ -581,7 +592,8 @@ function loop(now) {
     if (game.platforms) game.platforms.update(dt, player.x, player.y);
     if (game.life) game.life.update(dt, player.x, player.y);
     if (game.mp) game.mp.update(dt, player, camH);
-    if (game.games && game.mode === 'free') game.games.update(dt);
+    if (game.games && game.mode === 'free' && !game.dubai) game.games.update(dt);
+    if (game.crime && !blocked) game.crime.update(dt);
     let near = 0; for (const c of traffic.cars) if (!c.parked && Math.abs(c.x - player.x) < 120 && Math.abs(c.y - player.y) < 120) near++;
     const radio = player.mode === 'car' || player.mode === 'heli';
     updateAudio(dt, { driving: player.mode === 'car' && !blocked, bike: player.onBike, speed: player.v, throttle: Math.max(0, inp.y), day: game.day ?? 1, cars: near, foot: player.mode === 'foot', heli: player.mode === 'heli', rotor: game.heli ? game.heli.rot : 0, radio });
@@ -624,6 +636,7 @@ function loop(now) {
   if (game.started && game.fields) game.fields.update(dt, player.x, player.y);
   if (game.started && game.signals) game.signals.update(dt, player.x, player.y);
   if (game.started && game.billboards) game.billboards.update(dt, player.x, player.y, (1 - (game.day ?? 1)) > 0.4);
+  if (game.started && game.burj) game.burj.update(dt, player.x, player.y, 1 - (game.day ?? 1));
   if (game.started && game.numbers && player.mode !== 'heli') game.numbers.update(dt, player.x, player.y);
   if (game.started && game.people) game.people.update(dt, player.x, player.y);
   if (game.started && traffic) {      // police and ambulance light bars flash red and blue
@@ -633,7 +646,7 @@ function loop(now) {
   updateCamera(dt); VIEW.copy(camera.position);
   updateSky(player.x, player.y);
   updateLandmarks(dt);
-  sky.auroraNight = ((game.dayN || 0) - (game.clock % 24 < 12 ? 1 : 0)) % 2 === 0;
+  sky.auroraNight = !game.dubai && ((game.dayN || 0) - (game.clock % 24 < 12 ? 1 : 0)) % 2 === 0;      // no aurora over Dubai
   sky.update(camera, game._skyArgs[0], game._skyArgs[1], game._sunDir, scene.fog.color, dt);
   if (game.photo) game.photo.update(player.x, player.y);
   const night = 1 - (game.day ?? 1); setCarLightsNight(night);

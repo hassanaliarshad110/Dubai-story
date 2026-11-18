@@ -16,6 +16,16 @@ function tex(c, rep = true) {
 export function facadeTexture(kind) {
   const [c, g] = canvas(64, 64);
   g.fillStyle = '#e6e6e6'; g.fillRect(0, 0, 64, 64);
+  if (kind === 'glass') {               // Dubai: a bright glass curtain wall (tinted per tower by its vertex colour): two panes a bay, a spandrel band at each floor
+    const [c2, g2] = canvas(128, 128), gr = g2.createLinearGradient(0, 0, 0, 128);
+    gr.addColorStop(0, '#f4fbff'); gr.addColorStop(0.55, '#d3e3ee'); gr.addColorStop(1, '#b9cedc'); g2.fillStyle = gr; g2.fillRect(0, 0, 128, 128);
+    g2.fillStyle = 'rgba(255,255,255,0.35)'; g2.beginPath(); g2.moveTo(6, 100); g2.lineTo(48, 8); g2.lineTo(60, 8); g2.lineTo(18, 100); g2.fill();      // a sheen across each pane
+    g2.beginPath(); g2.moveTo(72, 100); g2.lineTo(104, 30); g2.lineTo(110, 30); g2.lineTo(78, 100); g2.fill();
+    g2.fillStyle = '#8fa5b5'; g2.fillRect(0, 106, 128, 22);                                            // spandrel
+    g2.fillStyle = 'rgba(40,60,80,0.55)'; g2.fillRect(0, 104, 128, 2); g2.fillRect(0, 0, 128, 2);
+    g2.fillStyle = '#e9f0f4'; g2.fillRect(0, 0, 3, 128); g2.fillRect(62, 0, 3, 128); g2.fillRect(125, 0, 3, 128);   // mullions
+    return tex(c2);
+  }
   if (kind === 'tower') {               // glass curtain wall
     g.fillStyle = '#8ea4b8'; g.fillRect(0, 0, 64, 64);
     g.fillStyle = '#6f879d'; g.fillRect(2, 4, 60, 52);

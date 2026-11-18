@@ -69,6 +69,7 @@ export function initMaterials() {
 export function setNight(k) {
   const on = Math.max(0, Math.min(1, (k - 0.35) / 0.4));      // lights come on at dusk
   for (const m of MAT.walls) m.emissiveIntensity = on * (m.userData.glow || 1);
+  if (MAT.wallTower && MAT.wallTower.userData.sheen) MAT.wallTower.userData.sheen.value = 1 - on * 0.9;
   if (MAT.lamp) MAT.lamp.emissiveIntensity = on * 2.2;
   if (MAT.crown) { MAT.crown.opacity = on * 0.85; MAT.crown.visible = on > 0.02; }
   if (MAT.wash) { MAT.wash.opacity = on * 0.55; MAT.wash.visible = on > 0.02; }

@@ -55,6 +55,18 @@ function noise(t, dur, peak, ftype, freq, q = 1) { const s = ctx.createBufferSou
 const ok = () => ctx && !muted && ctx.state === 'running';
 
 export const sfx = {
+  // gunshots, explosions and sirens (Dubai City Stories)
+  gun(kind = 'pistol', vol = 1) {
+    if (!ok()) return; const t = ctx.currentTime;
+    if (kind === 'shotgun') { noise(t, 0.28, 0.55 * vol, 'lowpass', 1400, 0.7); tone(90, 'sine', t, 0.003, 0.5 * vol, 0.16); }
+    else if (kind === 'sniper') { noise(t, 0.4, 0.6 * vol, 'lowpass', 2200, 0.6); tone(70, 'sine', t, 0.003, 0.55 * vol, 0.3); noise(t + 0.05, 0.5, 0.12 * vol, 'bandpass', 900, 0.5); }
+    else if (kind === 'rifle') { noise(t, 0.12, 0.42 * vol, 'bandpass', 1500, 0.6); tone(120, 'square', t, 0.002, 0.2 * vol, 0.07); }
+    else if (kind === 'smg') { noise(t, 0.07, 0.3 * vol, 'bandpass', 2200, 0.7); tone(160, 'square', t, 0.002, 0.12 * vol, 0.04); }
+    else { noise(t, 0.1, 0.38 * vol, 'bandpass', 1800, 0.7); tone(140, 'square', t, 0.002, 0.18 * vol, 0.06); }
+  },
+  boom(big = 1) { if (!ok()) return; const t = ctx.currentTime, k = Math.min(1.6, Math.max(0.6, big)); noise(t, 0.9 * k, 0.9, 'lowpass', 500, 0.6); tone(48, 'sine', t, 0.005, 0.9, 0.7 * k); noise(t + 0.06, 1.4 * k, 0.35, 'lowpass', 220, 0.5); noise(t, 0.12, 0.5, 'highpass', 3000, 0.6); },
+  whoosh() { if (!ok()) return; const t = ctx.currentTime; noise(t, 0.6, 0.3, 'bandpass', 900, 1.2); noise(t + 0.1, 0.5, 0.2, 'bandpass', 500, 1); },
+  siren(vol = 0.5) { if (!ok()) return; const t = ctx.currentTime, v = 0.07 * vol; tone(760, 'sawtooth', t, 0.03, v, 0.3); tone(960, 'sawtooth', t + 0.36, 0.03, v, 0.3); },
   step(run) { if (!ok()) return; const t = ctx.currentTime; noise(t, run ? 0.07 : 0.06, run ? 0.22 : 0.14, 'bandpass', 700 + Math.random() * 500, 1.2); noise(t, 0.04, 0.08, 'lowpass', 180, 0.7); },
   horn(bike) {
     if (!ok()) return; const t = ctx.currentTime, lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = bike ? 2600 : 1700; lp.connect(master);

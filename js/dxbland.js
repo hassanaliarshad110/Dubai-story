@@ -182,6 +182,46 @@ export class DubaiLandmarks {
       for (const sx of [-1, 1]) { const leg = new THREE.Mesh(loft([rect(15, 36), rect(15, 30), rect(13, 20)], [0, 80, 128]), m); leg.geometry.translate(0, 0, 0); const P = leg.geometry.attributes.position; for (let i = 0; i < P.count; i++) { const y = P.getY(i); P.setX(i, P.getX(i) + sx * (15.5 - Math.min(1, y / 128) * 9)); } P.needsUpdate = true; leg.geometry.computeVertexNormals(); leg.castShadow = true; g.add(leg); }
       box(g, 26, 20, 112, 140, m, 12, 10); box(g, 12, 10, 140, 146, s, 3, 3); needle(g, 144, 153, 0.8, s); box(g, 50, 40, 0, 12, m);
     });
+    this.crowns(game.world, scene, add);
+  }
+  // ---------------------------------------------------------------- every other tower: no more flat-topped boxes
+  // each tall tower in the map gets a roof of its own (spire, pyramid, setbacks, sloped cap, fins, turrets, plant floor),
+  // the known ones the top they really have. Everything is merged into one mesh per colour, so it costs almost nothing
+  crowns(world, scene) {
+    const NAMED = [[-8288, -6493, 'palm'], [-8223, -6418, 'palm'], [-5958, -2523, 'spire'], [-6029, -2613, 'pyramid'], [-5627, -1938, 'turrets'], [-5676, -2073, 'fins'], [-6854, -3974, 'setback'],
+      [-6307, -3453, 'spire'], [-6097, -3093, 'slant'], [-6111, -3133, 'flat'], [-5944, -2472, 'slant'], [-5491, -1697, 'setback'], [-5809, -3637, 'slant'], [-6510, -3784, 'flat'], [-6793, -3872, 'slant'],
+      [-5726, -2162, 'flat'], [-6001, -3549, 'flat'], [-5706, -1972, 'slant'], [-5800, -2248, 'slant'], [-6233, -3332, 'spire'], [-6426, -3277, 'pyramid'], [-6290, -3063, 'setback'], [-6094, -2726, 'fins'], [-6122, -2783, 'fins'], [-6942, -4110, 'spire']];
+    const SKIP = [[-6635, -5183, 150], [-5807, -2921, 45], [-6613, -3583, 30], [-6271, -4051, 60], ...HIDE.map(h => [h[0], h[1], h[2] + 6])];
+    const STYLES = ['flat', 'flat', 'spire', 'pyramid', 'setback', 'setback', 'slant', 'slant', 'fins', 'turrets', 'ring'];
+    const info = S => { const r = S.r, n = r.length; let cx = 0, cy = 0, ar = 0; for (let i = 0; i < n; i++) { const a = r[i], b = r[(i + 1) % n]; cx += a[0]; cy += a[1]; ar += a[0] * b[1] - b[0] * a[1]; } cx /= n; cy /= n;
+      let best = null; for (let i = 0; i < n; i++) { const a = r[i], b = r[(i + 1) % n], l = Math.hypot(b[0] - a[0], b[1] - a[1]); if (l < 1) continue; const ux = (b[0] - a[0]) / l, uy = (b[1] - a[1]) / l; let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9; for (const p of r) { const u = p[0] * ux + p[1] * uy, v = -p[0] * uy + p[1] * ux; u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v); } const w = u1 - u0, d = v1 - v0; if (!best || w * d < best.w * best.d) { const cu = (u0 + u1) / 2, cv = (v0 + v1) / 2; best = { w, d, ang: Math.atan2(uy, ux), x: cu * ux - cv * uy, y: cu * uy + cv * ux }; } }
+      return best && { ...best, cx, cy, area: Math.abs(ar) / 2 }; };
+    const T = (world.skyline || []).filter(q => q.h >= 105 && q.r && q.r.length >= 3).map(q => ({ q, i: info(q) })).filter(t => t.i && t.i.area > 220 && t.i.area > t.i.w * t.i.d * 0.55 && !SKIP.some(k => Math.hypot(k[0] - t.i.cx, k[1] - t.i.cy) < k[2]));
+    const buf = { silver: [], white: [], dark: [], gold: [], red: [] }, M4 = new THREE.Matrix4(), E = new THREE.Euler(), Q = new THREE.Quaternion(), V = new THREE.Vector3(), ONE = new THREE.Vector3(1, 1, 1);
+    let cur = null; const put = (geo, col, x = 0, y = 0, z = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; g.translate(x, y, z); g.applyMatrix4(cur); const p = g.attributes.position.array; for (let i = 0; i < p.length; i++) buf[col].push(p[i]); };
+    const bx = (w, d, y0, y1, col, w1 = w, d1 = d, x = 0, z = 0) => put(loft([rect(w, d), rect(w1, d1)], [y0, y1]), col, x, 0, z);
+    const mast = (y0, y1, r, col, x = 0, z = 0) => put(new THREE.CylinderGeometry(0.12, r, y1 - y0, 6), col, x, (y0 + y1) / 2, z);
+    let count = 0;
+    for (const { q, i } of T) {
+      // only the top of a stack gets the roof
+      if (T.some(o => o.q !== q && o.q.h > q.h + 1 && (o.q.mh || 0) >= q.h - 2 && Math.hypot(o.i.cx - i.cx, o.i.cy - i.cy) < Math.max(i.w, i.d) * 0.6)) continue;
+      const w = i.w, d = i.d, s = Math.min(w, d), H = q.h, hsh = Math.abs(Math.sin(i.cx * 12.9898 + i.cy * 78.233) * 43758.5453) % 1, nm = NAMED.find(k => Math.hypot(k[0] - i.cx, k[1] - i.cy) < 26);
+      const style = nm ? nm[2] : STYLES[Math.floor(hsh * STYLES.length)], col = hsh > 0.86 ? 'gold' : hsh > 0.5 ? 'silver' : hsh > 0.25 ? 'white' : 'dark', k = Math.min(1.5, Math.max(0.7, H / 180));
+      const gy = ground(i.cx, i.cy); E.set(0, i.ang, 0); Q.setFromEuler(E); V.set(i.x, gy + H - 0.3, -i.y); cur = M4.clone().compose(V, Q, ONE); count++;
+      bx(w + 0.8, d + 0.8, 0, 1.4, 'white');                                   // the parapet band every one of them has
+      if (style === 'flat') { bx(w * 0.5, d * 0.45, 1.4, 6, 'dark'); bx(w * 0.2, d * 0.2, 6, 9, 'silver'); if (hsh > 0.4) mast(9, 9 + s * 0.7 * k, 0.5, 'white'); if (hsh > 0.7) mast(20, 24, 0.3, 'red'); }
+      else if (style === 'spire') { bx(w * 0.72, d * 0.72, 1.4, s * 0.45, col); bx(w * 0.72, d * 0.72, s * 0.45, s * 1.25 * k, col, 1.2, 1.2); mast(s * 1.2 * k, s * 2.3 * k, 0.8, 'silver'); }
+      else if (style === 'pyramid') { bx(w, d, 1.4, s * 0.85 * k, col, 1, 1); mast(s * 0.8 * k, s * 1.3 * k, 0.5, 'silver'); }
+      else if (style === 'setback') { bx(w * 0.8, d * 0.8, 1.4, s * 0.38, 'silver'); bx(w * 0.84, d * 0.84, s * 0.38, s * 0.42, 'white'); bx(w * 0.58, d * 0.58, s * 0.42, s * 0.76, 'silver'); bx(w * 0.36, d * 0.36, s * 0.76, s * 1.05, col); mast(s * 1.05, s * 1.8 * k, 0.6, 'white'); }
+      else if (style === 'slant') { put(prism(rect(w, d), 1.4, [s * 0.9 * k, s * 0.9 * k, 1.5, 1.5]), col); if (hsh > 0.5) mast(s * 0.9 * k, s * 1.5 * k, 0.5, 'silver', -w / 2 + 1.5, 0); }
+      else if (style === 'fins') { for (const sz of [-1, 1]) bx(w, 1.4, 1.4, s * 0.8 * k, col, w * 0.5, 1.4, 0, sz * (d / 2 - 0.7)); bx(w * 0.4, d * 0.5, 1.4, 5, 'dark'); mast(5, s * 1.1 * k, 0.5, 'silver'); }
+      else if (style === 'turrets') { for (let c = 0; c < 4; c++) { const x = (c & 1 ? 1 : -1) * (w / 2 - s * 0.14), z = (c & 2 ? 1 : -1) * (d / 2 - s * 0.14); bx(s * 0.28, s * 0.28, 1.4, s * 0.5, 'white', s * 0.28, s * 0.28, x, z); bx(s * 0.3, s * 0.3, s * 0.5, s * 0.85, col, 0.6, 0.6, x, z); } bx(w * 0.4, d * 0.4, 1.4, 6, 'dark'); }
+      else if (style === 'ring') { for (let c = 0; c < 4; c++) bx(1.6, 1.6, 1.4, s * 0.55, 'white', 1.6, 1.6, (c & 1 ? 1 : -1) * (w / 2 - 0.8), (c & 2 ? 1 : -1) * (d / 2 - 0.8)); bx(w + 0.6, d + 0.6, s * 0.55, s * 0.55 + 1.6, 'white'); bx(w * 0.45, d * 0.45, 1.4, s * 0.4, 'dark'); mast(s * 0.4, s * 1.2 * k, 0.5, col === 'dark' ? 'silver' : col); }
+      else if (style === 'palm') { bx(w * 0.85, d * 0.85, 1.4, s * 0.5, 'silver'); for (let c = 0; c < 8; c++) { const a = c / 8 * 6.2832; bx(1.4, s * 0.5, s * 0.3, s * 1.3, 'silver', 0.5, 2, Math.cos(a) * s * 0.3, Math.sin(a) * s * 0.3); } bx(w * 0.5, d * 0.5, s * 0.5, s * 1.4, 'white', 2, 2); mast(s * 1.35, s * 2.2, 0.9, 'silver'); }
+    }
+    const COL = { silver: 0xc9d1d8, white: 0xf0f1f0, dark: 0x3d4650, gold: 0xc8a85a, red: 0xd02a2a };
+    for (const c in buf) { if (!buf[c].length) continue; const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(buf[c], 3)); g.computeVertexNormals(); const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: COL[c], side: DS })); m.frustumCulled = false; scene.add(m); }
+    this.crownCount = count;
   }
   // the windows come on at dusk
   update() {

@@ -11,6 +11,9 @@ import { BLOCKS } from './stagekit.js?v=11190630';
 import { makeCar } from './actors.js?v=11190630';
 import { plateOpt } from './cars3d.js?v=11190630';
 import { TYRE_Y, rotY } from './player.js?v=11190630';
+import { Character } from './rig.js?v=11190630';
+import { standY } from './tiles.js?v=11190630';
+import { toast } from './hud.js?v=11190630';
 
 // the map's plain blocks on the south side of 27C Street and at the bend: the townhouses and the red-roofed villa stand there
 for (let x = 1090; x <= 1210; x += 10) HIDE_BLD.push([x, -184, 13.5, 0]);
@@ -207,7 +210,23 @@ export class Garhoud {
     }
   }
   unpark() { const g = this.g; for (const c of this.cars || []) if (!c.dead && Math.hypot(c.x - c.x0, c.y - c.y0) < 2) { this.scene.remove(c.mesh); const i = g.traffic.cars.indexOf(c); if (i >= 0) g.traffic.cars.splice(i, 1); } this.cars = null; }
+  // Kakina walks up and down the pavement across from the villa on 27C Street, and a child runs rings round her
+  family(dt, px, py) {
+    const near = Math.hypot(1136 - px, -164 - py) < 220;
+    if (!near) { if (this.kak) { this.scene.remove(this.kak.g); this.scene.remove(this.kid.g); this.kak = this.kid = null; } return; }
+    if (!this.kak) {
+      this.kak = new Character({ glb: 'npc_hijab', skin: 0xc99a76, shirt: 0x7a2f5a, pants: 0x2a2a30, hair: 0x15100d, fem: true }); this.kid = new Character({ glb: 'kid_boy', skin: 0xc99a76, shirt: 0xe0a020, pants: 0x2b3a55, hair: 0x15100d });
+      this.kid.g.scale.multiplyScalar(0.62); this.scene.add(this.kak.g); this.scene.add(this.kid.g); this.kx = 1136; this.kdir = 1; this.ka = 0; this.kwait = 0;
+    }
+    // she strolls between the two ends of the villa's front, pausing now and then to watch the child
+    let sp = 0; if (this.kwait > 0) this.kwait -= dt; else { sp = 1.05; this.kx += this.kdir * sp * dt; if (this.kx > 1144 || this.kx < 1127) { this.kdir *= -1; this.kwait = 2.5; } else if (Math.random() < dt * 0.06) this.kwait = 3; }
+    const ky = -164.7, kz = standY(this.kx, ky); this.kak.animate(dt, { speed: sp }); this.kak.g.position.set(this.kx, kz + 0.02, -ky); this.kak.g.rotation.y = Math.PI - (sp ? (this.kdir > 0 ? Math.PI / 2 : -Math.PI / 2) : Math.PI);
+    this.ka += dt * 2.1; const r = 1.55, cx = this.kx + Math.sin(this.ka) * r, cy = ky + Math.cos(this.ka) * r, ch = this.ka + Math.PI / 2;
+    this.kid.animate(dt, { speed: 3.3, run: true }); this.kid.g.position.set(cx, standY(cx, cy) + 0.02, -cy); this.kid.g.rotation.y = Math.PI - ch;
+    if (!this.kHi && Math.hypot(this.kx - px, ky - py) < 7) { this.kHi = true; toast('👋 Kakina is out in front of 27C with the little one.', 3500); }
+  }
   update(dt, px, py) {
+    this.family(dt, px, py);
     if ((this.t -= dt) > 0) return; this.t = 1;
     const d = Math.hypot(C.x - px, C.y - py);
     if (d < 760 && !this.grp) this.build();

@@ -311,9 +311,9 @@ export class Crime {
       }
       if (this.stars === 0 || d > 240) { q.gone = (q.gone || 0) + dt; if (q.gone > 5 || d > 240) { this.scene.remove(g); q.dead = true; continue; } }
       const hh = Math.atan2(p.x - q.x, p.y - q.y); let sp = 0;
-      if (d > 13 && this.stars > 0) { sp = 3.6; q.x += Math.sin(hh) * sp * dt; q.y += Math.cos(hh) * sp * dt; }
+      if (d > (PEACE ? 1.8 : 13) && this.stars > 0) { sp = PEACE ? 4.6 : 3.6; q.x += Math.sin(hh) * sp * dt; q.y += Math.cos(hh) * sp * dt; }
       q.z = standY(q.x, q.y); q.ch.animate(dt, { speed: sp, run: sp > 0 }); g.position.set(q.x, q.z + 0.05, -q.y); g.rotation.y = Math.PI - hh;
-      if (PEACE && this.stars > 0 && d < 2.5 && p.mode === 'foot' && !(this.g.deadT > 0)) { this.busted(); break; }
+      if (PEACE && this.stars > 0 && d < 3 && p.mode !== 'heli' && (p.mode === 'foot' || Math.abs(p.v) < 2) && !(this.g.deadT > 0)) { this.busted(); break; }
       if (!PEACE && this.stars > 0 && d < 55 && (q.shootT -= dt) <= 0 && !(this.g.deadT > 0)) {
         q.shootT = 0.9 + Math.random() * 0.9; const hit = Math.random() < (p.mode === 'foot' ? 0.5 : 0.3) * Math.max(0.3, 1 - d / 70);
         this.tracer(q.x, q.y, q.z + 1.4, p.x + (hit ? 0 : (Math.random() - 0.5) * 3), p.y + (hit ? 0 : (Math.random() - 0.5) * 3), p.gy + 1.1, true); sfx.gun && sfx.gun('rifle', Math.max(0.15, 0.6 - d / 120));

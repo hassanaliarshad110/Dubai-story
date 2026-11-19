@@ -439,11 +439,14 @@ def main():
         if hw in PATH: linear.append((w, 'path')); continue
         if rw in ('subway', 'light_rail', 'monorail', 'tram', 'rail', 'narrow_gauge'): linear.append((w, 'rail')); continue
         if ae in ('runway', 'taxiway', 'taxilane'): linear.append((w, 'air'))
-    NH = defaultdict(float)
+    # footbridges are kept apart from roads: a road that merely touches the foot of a footbridge's stairs stays on the ground
+    NH, NHP = defaultdict(float), defaultdict(float)
     for w, typ in linear:
         h = deck_height(w['tags'], typ == 'rail')
         if h > 0:
-            for nid in w['nodes']: NH[nid] = max(NH[nid], h)
+            for nid in w['nodes']:
+                NHP[nid] = max(NHP[nid], h)
+                if typ != 'path': NH[nid] = max(NH[nid], h)
 
     # ramps carry on from one way to the next: a short link road that leaves a flyover half-way down hands its height to
     # the road it joins, so no ramp ends in a step a car cannot climb
@@ -457,24 +460,30 @@ def main():
         return pts, [max(0.0, max(H[w['nodes'][r]] - grade * abs(d[i] - d[r]) for r in raisedIdx)) for i in range(len(pts))]
     PH = dict(NH)
     ground_ways = [(w, typ) for w, typ in linear if typ != 'air' and deck_height(w['tags'], typ == 'rail') <= 0 and w['tags'].get('tunnel') not in ('yes', 'culvert', 'flooded') and len(w['nodes']) == len(w['geometry'])]
-    for _pass in range(8):
-        changed = 0
-        for w, typ in ground_ways:
-            if not any(PH.get(n, 0) > 0 for n in w['nodes']): continue
-            _, zs = ramp_z(w, typ, PH)
-            if zs is None: continue
-            for n, z in zip(w['nodes'], zs):
-                if z > 0.15 and z > PH.get(n, 0) + 0.05: PH[n] = z; changed += 1
-        if not changed: break
+    def spread(H, ways_):
+        for _pass in range(8):
+            changed = 0
+            for w, typ in ways_:
+                if not any(H.get(n, 0) > 0 for n in w['nodes']): continue
+                _, zs = ramp_z(w, typ, H)
+                if zs is None: continue
+                for n, z in zip(w['nodes'], zs):
+                    if z > 0.15 and z > H.get(n, 0) + 0.05: H[n] = z; changed += 1
+            if not changed: break
+    spread(PH, [g for g in ground_ways if g[1] != 'path'])          # roads and rails ramp down from road and rail decks only
+    PHP = dict(NHP)
+    for n, z in PH.items(): PHP[n] = max(PHP.get(n, 0), z)
+    spread(PHP, [g for g in ground_ways if g[1] == 'path'])          # paths ramp down from anything raised
     stats['ramp_nodes'] = len(PH) - len(NH)
 
     def heights(w, typ):
         t = w['tags']; pts = geom_xy(w['geometry'])
         if t.get('tunnel') in ('yes', 'culvert', 'flooded'): return pts, None
         h = deck_height(t, typ == 'rail')
-        if h > 0: return pts, [max(h, NH[n]) if NH[n] else h for n in w['nodes']]
+        N0, P0 = (NHP, PHP) if typ == 'path' else (NH, PH)
+        if h > 0: return pts, [max(h, N0[n]) if N0[n] else h for n in w['nodes']]
         if len(w['nodes']) != len(pts): return pts, None
-        p2, zs = ramp_z(w, typ, PH)
+        p2, zs = ramp_z(w, typ, P0)
         if zs is None or max(zs) <= 0.02: return pts, None
         return pts, zs
 

@@ -65,6 +65,7 @@ import { tr } from './i18n.js?v=11112231';
 import { Billboards, loadBillboards, dubaiBoards } from './billboards.js?v=11112231';
 import { BurjShow } from './burjshow.js?v=11112231';
 import { VideoWall } from './videowall.js?v=11112231';
+import { LyricBoards } from './lyricboard.js?v=11112231';
 import { DubaiMissions } from './dxbmissions.js?v=11112231';
 import { DubaiFun, addDubaiPlaces } from './dxbfun.js?v=11112231';
 import { prepLandmarks, DubaiLandmarks } from './dxbland.js?v=11112231';
@@ -214,7 +215,7 @@ async function boot() {
   game.metro = new Metro(game, { toast, setPrompt, sfx }); game.music = music;
   if (!game.photoOn) game.platforms = buildPlatforms(scene, world, transit);       // a platform to stand on at every CTrain station
   game.buses = new Buses(game, { toast, setPrompt, sfx });
-  game.signals = new Signals(scene, traffic, { radius: mobile ? 180 : 260 }); game.billboards = new Billboards(scene, DXB ? dubaiBoards(world, (x, y) => tiles.roofAt(x, y)) : null); if (DXB) { game.burj = new BurjShow(game, scene, world); game.videowall = new VideoWall(game, camera, game.billboards.items); game.land = new DubaiLandmarks(game, scene); addDubaiPlaces(world); game.dxm = new DubaiMissions(game, scene, world); game.fun = new DubaiFun(game, scene, world, tiles); } if (world.addr) game.numbers = new HouseNumbers(scene, tiles, { radius: 1 });
+  game.signals = new Signals(scene, traffic, { radius: mobile ? 180 : 260 }); game.billboards = new Billboards(scene, DXB ? dubaiBoards(world, (x, y) => tiles.roofAt(x, y)) : null); if (DXB) { game.burj = new BurjShow(game, scene, world); game.videowall = new VideoWall(game, camera, game.billboards.items); game.lyricboards = new LyricBoards(game, game.billboards.items); game.land = new DubaiLandmarks(game, scene); addDubaiPlaces(world); game.dxm = new DubaiMissions(game, scene, world); game.fun = new DubaiFun(game, scene, world, tiles); } if (world.addr) game.numbers = new HouseNumbers(scene, tiles, { radius: 1 });
   initHealth(game); game.sfx = sfx; traffic.onHitPlayer = (v, nx, ny) => hurt(Math.min(100, 10 + v * 4), nx, ny, 'car');
   game.mp = new Multiplayer(game, scene);       // play online: other players, chat and voice near you
   game.games = new Games(game, scene); game.games.show(false);
@@ -650,6 +651,7 @@ function loop(now) {
   if (game.started && game.signals) game.signals.update(dt, player.x, player.y);
   if (game.started && game.billboards) game.billboards.update(dt, player.x, player.y, (1 - (game.day ?? 1)) > 0.4);
   if (game.started && game.videowall) game.videowall.update(dt, player);
+  if (game.started && game.lyricboards) game.lyricboards.update(dt, player);
   if (game.started && game.burj) game.burj.update(dt, player.x, player.y, 1 - (game.day ?? 1));
   if (game.started && game.numbers && player.mode !== 'heli') game.numbers.update(dt, player.x, player.y);
   if (game.started && game.people) game.people.update(dt, player.x, player.y);

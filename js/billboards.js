@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { ground } from './terrain.js?v=11112231';
 import { rotY, dirOf } from './player.js?v=11112231';
+import { lyricTexture } from './lyricboard.js?v=11112231';
 
 let DATA = null;
 export async function loadBillboards() { try { DATA = await (await fetch('data/billboards.json')).json(); } catch (e) { DATA = null; } return !!DATA; }
@@ -71,7 +72,7 @@ export function dubaiBoards(world, roofAt) {
       for (const off of [14, 19, 24, 30, 36]) { const qx = (a[0] + b[0]) / 2 + dy * off, qy = (a[1] + b[1]) / 2 - dx * off; if (clear(qx, qy, 11.5)) { x = qx; y = qy; break; } }
       if (x == null) { acc = 400; continue; }
       if (!far(x, y)) continue;
-      const brd = { x, y, h: Math.atan2(-dx, -dy), ad: (n * 5 + (n % 2 ? 0 : 3)) % ADS.length, roofAt }; if (n % 9 === 4) brd.video = (n - 4) / 9; out.push(brd); n++;      // one in nine is a video screen
+      const brd = { x, y, h: Math.atan2(-dx, -dy), ad: (n * 5 + (n % 2 ? 0 : 3)) % ADS.length, roofAt }; if (n % 9 === 4) brd.video = (n - 4) / 9; else if (n % 9 === 8) brd.lyric = 1; out.push(brd); n++;      // one in nine is a video screen, another one the title song's lyric video
     }
   }
   return out;
@@ -88,9 +89,9 @@ export class Billboards {
         const g = b.g = new THREE.Group(), gy = ground(b.x, b.y);
         g.position.set(b.x, gy, -b.y); g.rotation.y = rotY(b.h);
         for (const x of [-3.6, 3.6]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.45, 7, 0.45), postMat); p.position.set(x, 3.5, -0.3); p.castShadow = true; g.add(p); }
-        const vid = b.video != null, bw = vid ? 16 : 12, bh = vid ? 9 : 5.06, by = vid ? 11.2 : 9.3;
+        const vid = b.video != null || b.lyric, bw = vid ? 16 : 12, bh = vid ? 9 : 5.06, by = vid ? 11.2 : 9.3;
         const back = new THREE.Mesh(new THREE.BoxGeometry(bw + 0.4, bh + 0.34, 0.3), backMat); back.position.set(0, by, -0.3); back.castShadow = true; g.add(back);
-        b.mat = new THREE.MeshBasicMaterial({ map: vid ? videoTexture() : b.ad != null ? adTexture(b.ad) : wardTexture(b.ward, b.councillor), toneMapped: false });
+        b.mat = new THREE.MeshBasicMaterial({ map: b.lyric ? lyricTexture() : vid ? videoTexture() : b.ad != null ? adTexture(b.ad) : wardTexture(b.ward, b.councillor), toneMapped: false });
         const face = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), b.mat); face.position.set(0, by, -0.14); g.add(face); b.face = face;
         this.scene.add(g);
       } else if (d > 1500 && b.g) { this.scene.remove(b.g); b.g = null; b.face = null; }

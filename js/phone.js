@@ -91,7 +91,9 @@ const KIND_ICON = { street: '🛣️', building: '🏢', place: '📌', area: '�
 async function loadSearch() {
   if (SEARCH) return SEARCH;
   const r = await fetch('data/search.json'); if (!r.ok) throw new Error('no search list');
-  SEARCH = (await r.json()).map(e => ({ e, n: normQ(e[0] + ' ' + (e[6] || '')) }));
+  // Muhaisnah 4 opens on the street in front of the DEWA staff complex (block C), not at the middle of the district
+  const pin = [['Muhaisnah 4', 7154.3, 3721.9, 'area', 7157.5, 3726.8, 'Muhaisanah 4 · محيصنة 4'], ['DEWA Staff Building', 7146, 3709, 'landmark', 7157.5, 3726.8, 'Muhaisnah 4'], ['Tamim Al Dari Mosque', 7243.5, 3705.2, 'landmark', 7222, 3724, 'Muhaisnah 4'], ['Abdulla Kutait Grocery', 7244.1, 3739.7, 'place', 7256, 3731, 'Muhaisnah 4']];
+  SEARCH = (await r.json()).filter(e => !/^muhaisa?nah 4$/i.test(e[0])).concat(pin).map(e => ({ e, n: normQ(e[0] + ' ' + (e[6] || '')) }));
   return SEARCH;
 }
 function normQ(s) { return String(s).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[’'`.,#()\-]/g, ' ').replace(/\b(al|el)\s+/g, 'al').replace(/\s+/g, ' ').trim(); }

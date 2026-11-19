@@ -53,6 +53,14 @@ export class People {
     const t = this.tiles.tileAt(px + (Math.random() - 0.5) * 220, py + (Math.random() - 0.5) * 220);
     if (!t || !t.group || t.lite || !t.layers) return;
     const S = this.segs(t); if (!S.length) return;
+    // Dubai: half of them gather where the shops and restaurants are, and stand about a while
+    let near = null;
+    if (this.shops && Math.random() < 0.55) { const L = []; for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const c = this.shops.get((Math.floor(px / 150) + i) + ',' + (Math.floor(py / 150) + j)); if (c) for (const b of c) { const d = Math.hypot(b[0] - px, b[1] - py); if (d > 30 && d < 135) L.push(b); } } if (L.length) near = L[Math.floor(Math.random() * L.length)]; }
+    if (near) {
+      const t2 = this.tiles.tileAt(near[0], near[1]); const S2 = t2 && t2.group && !t2.lite && t2.layers ? this.segs(t2) : []; let best = null, bd = 28, bu = 0;
+      for (const s of S2) { const dx = s[2] - s[0], dy = s[3] - s[1], l2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((near[0] - s[0]) * dx + (near[1] - s[1]) * dy) / l2)), d = Math.hypot(s[0] + dx * u - near[0], s[1] + dy * u - near[1]); if (d < bd) { bd = d; best = s; bu = u; } }
+      if (best) { const lk = LOOKS[Math.floor(Math.random() * LOOKS.length)], ch = new Character(lk); ch.g.userData.cop = lk.glb === 'police_officer'; this.scene.add(ch.g); this.walkers.push({ ch, s: best, u: Math.max(0, Math.min(1, bu + (Math.random() - 0.5) * 0.3)), dir: Math.random() < 0.5 ? 1 : -1, sp: 1.1 + Math.random() * 0.4, t: t2, pause: 6 + Math.random() * 22, cop: lk.glb === 'police_officer' }); return; }
+    }
     for (let tries = 0; tries < 8; tries++) {
       const s = S[Math.floor(Math.random() * S.length)], u = Math.random(), x = s[0] + (s[2] - s[0]) * u, y = s[1] + (s[3] - s[1]) * u, d = Math.hypot(x - px, y - py);
       if (d < 35 || d > 130) continue;

@@ -219,7 +219,7 @@ async function boot() {
   game.games = new Games(game, scene); game.games.show(false);
   if (!game.photoOn && !DXB) { game.life = new Life(game, scene, { mobile }); setTimeout(() => ['kid_boy', 'kid_girl', 'kid_boy2'].forEach(loadHuman), 8000); }     // children playing, rabbits and the odd bear in the parks
   if (DXB) { fetch('audio/radio.json').then(r => r.json()).then(l => { music.playlist(l); music.onTrack = t => { if (player.mode === 'car' || player.mode === 'heli') toast(`📻 Aflatoon FM · ${t.title}`); }; }).catch(() => { }); }
-  if (DXB) { game.people = new People(scene, tiles, { max: mobile ? 14 : 26, maxDowntown: mobile ? 14 : 26, camps: false }); game.crime = new Crime(game, scene); }
+  if (DXB) { game.people = new People(scene, tiles, { max: mobile ? 22 : 38, maxDowntown: mobile ? 22 : 38, camps: false }); game.crime = new Crime(game, scene); }
   if (!DXB) game.people = new People(scene, tiles, { max: Math.round((mobile ? 8 : 16) * QP().crowd), maxDowntown: Math.round((mobile ? 18 : 40) * QP().crowd) });
   initHUD(world, game); initPhone(game); initRealView(game); initInput(canvas);
   game.updateMoney();

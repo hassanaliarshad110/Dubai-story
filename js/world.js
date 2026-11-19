@@ -35,7 +35,8 @@ export function buildWorldMeshes(scene, world) {
     new THREE.TextureLoader().load('data/s2/far.jpg', tex => { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; sat.map = tex; sat.color.set(0xffffff); sat.needsUpdate = true; });
     baseMat = sat;
   }
-  const base = new THREE.Mesh(pg, baseMat); base.position.set(cxm, !TER.on && world.s2 ? -0.12 : -0.02, -cym);      // flat map with satellite tiles: the far ground sits just under the near tiles base.receiveShadow = true; g.add(base);
+  const base = new THREE.Mesh(pg, baseMat); base.position.set(cxm, !TER.on && world.s2 ? -0.12 : -0.02, -cym);      // flat map with satellite tiles: the far ground sits just under the near tiles
+  base.receiveShadow = true; g.add(base);
   world.bounds = { x0, x1, y0, y1 };
   // big parks, land use and water (always visible, also far away)
   const bigFeats = world.big.filter(b => b.k !== 99).map(b => ({ kind: b.k, rings: flatRings(b.rings) }));

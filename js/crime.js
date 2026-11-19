@@ -12,15 +12,26 @@ import { dirOf, rotY, TYRE_Y } from './player.js?v=11112231';
 import { spinWheels } from './vehicles.js?v=11112231';
 import { lightsOn } from './carlights.js?v=11112231';
 import { sfx } from './sound.js?v=11112231';
+import { makeHeli, syncHeli } from './heli.js?v=11112231';
+import { Character } from './rig.js?v=11112231';
 
+export const SVG = d => `<svg viewBox="0 0 64 40" width="40" height="25" style="vertical-align:middle"><path fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round" d="${d}"/></svg>`;
+const ICON = {
+  pistol: SVG('M6 8h40v3h4v6H34c-2 0-3 1-3 3v2h-8l-3 14H9l4-16H6z'),
+  smg: SVG('M3 10h34V7h6v3h18v5H47v3h-7l-1 4h-5l1 14h-7l-1-13h-9l-2 9H9l3-12H3z'),
+  shotgun: SVG('M2 13h58v4H36v3H24l-3 4h-7l-6 9H2l5-13H2z'),
+  rifle: SVG('M2 12h22l2-3h12l1 3h23v4H44l-1 3 5 13h-6l-5-11h-5l-1 4h-6l1-8H14l-5 10H3l3-11H2z'),
+  sniper: SVG('M1 15h62v3H44l-1 3h-9l-2 8h-6l1-8H14l-5 9H3l3-12H1zM24 7h20v5H24z'),
+  minigun: SVG('M4 9h40v3H4zM4 14h40v3H4zM4 19h40v3H4zM44 7h8v17h-8zM52 11h9v9h-9zM30 23h8l2 12h-8z'),
+};
 export const WEAPONS = [
   { id: 0, icon: '👊', name: 'Fists', melee: true, dmg: 50, every: 0.5, range: 1.8 },
-  { id: 1, icon: '🔫', name: 'Pistol', dmg: 40, every: 0.3, range: 60, spread: 0.015, snd: 'pistol', len: 0.2 },
-  { id: 2, icon: '🔫', name: 'SMG', dmg: 22, every: 0.075, range: 60, spread: 0.045, snd: 'smg', len: 0.34 },
-  { id: 3, icon: '💥', name: 'Shotgun', dmg: 22, pellets: 8, every: 0.85, range: 30, spread: 0.1, snd: 'shotgun', len: 0.6 },
-  { id: 4, icon: '🪖', name: 'AK-47', dmg: 36, every: 0.105, range: 110, spread: 0.025, snd: 'rifle', len: 0.7 },
-  { id: 5, icon: '🎯', name: 'Sniper rifle', dmg: 400, every: 1.3, range: 400, spread: 0, snd: 'sniper', len: 0.95 },
-  { id: 6, icon: '⚙️', name: 'Minigun', dmg: 30, every: 0.035, range: 110, spread: 0.05, snd: 'smg', len: 0.8, fat: true },
+  { id: 1, icon: '', svg: ICON.pistol, name: 'Pistol', dmg: 40, every: 0.3, range: 60, spread: 0.015, snd: 'pistol', len: 0.2 },
+  { id: 2, icon: '', svg: ICON.smg, name: 'SMG', dmg: 22, every: 0.075, range: 60, spread: 0.045, snd: 'smg', len: 0.34 },
+  { id: 3, icon: '', svg: ICON.shotgun, name: 'Shotgun', dmg: 22, pellets: 8, every: 0.85, range: 30, spread: 0.1, snd: 'shotgun', len: 0.6 },
+  { id: 4, icon: '', svg: ICON.rifle, name: 'AK-47', dmg: 36, every: 0.105, range: 110, spread: 0.025, snd: 'rifle', len: 0.7 },
+  { id: 5, icon: '', svg: ICON.sniper, name: 'Sniper rifle', dmg: 400, every: 1.3, range: 400, spread: 0, snd: 'sniper', len: 0.95 },
+  { id: 6, icon: '', svg: ICON.minigun, name: 'Minigun', dmg: 30, every: 0.035, range: 110, spread: 0.05, snd: 'smg', len: 0.8, fat: true },
   { id: 7, icon: '💣', name: 'Grenades', throw: true, every: 0.9, speed: 17, up: 0.4, g: 9.8, R: 8, life: 4 },
   { id: 8, icon: '🚀', name: 'RPG', rocket: true, every: 1.1, speed: 60, R: 10, life: 5, len: 0.95, tube: true },
   { id: 9, icon: '🛰️', name: 'Homing missile', rocket: true, homing: true, every: 1.4, speed: 48, R: 11, life: 8, len: 1.05, tube: true },
@@ -89,7 +100,7 @@ export class Crime {
   cycle(d) { this.setWeapon((this.w + d + WEAPONS.length) % WEAPONS.length); }
   setWeapon(i) {
     if (!WEAPONS[i]) return; this.w = i; const W = WEAPONS[i];
-    this.elFire.textContent = W.icon; this.elName.textContent = W.name; toast(`${W.icon} ${W.name}`, 1200); this.updateHeld();
+    if (W.svg) this.elFire.innerHTML = W.svg; else this.elFire.textContent = W.icon; this.elName.textContent = W.name; toast(`${W.icon} ${W.name}`.trim(), 1200); this.updateHeld();
   }
   // the weapon in the right hand
   updateHeld() {
@@ -111,6 +122,7 @@ export class Crime {
   }
   // ---------------------------------------------------------------- crime and stars
   crime(n, why) {
+    this.lastWhy = why;
     const s0 = this.stars; this.heat = Math.min(5.4, this.heat + n); this.stars = Math.min(5, Math.floor(this.heat)); this.unseen = 0;
     if (this.stars > s0) { toast(`🚨 ${'★'.repeat(this.stars)} ${why || 'Wanted'}`, 2200); this.drawStars(); }
   }
@@ -126,9 +138,17 @@ export class Crime {
   stole(c) {
     if (c.owned) return; const pol = c.mesh.userData.police;
     if (pol) this.atLeast(2, 'You stole a police car!');
-    else if (!c.parked) { this.atLeast(1, 'Carjacking!'); this.fleeDriver(c); }
-    else if (this.witnesses(c.x, c.y, 40)) this.atLeast(1, 'Car theft reported!');
+    else {      // a stolen car is only a crime when the police are there to see it
+      const seen = this.policeNear(c.x, c.y, 75); if (!c.parked) this.fleeDriver(c);
+      if (seen) this.atLeast(1, c.parked ? 'A police officer saw you take that car!' : 'Carjacking, right in front of the police!');
+    }
     c.owned = true;
+  }
+  policeNear(x, y, r) {
+    for (const u of this.units) if (!u.dead && Math.hypot(u.x - x, u.y - y) < r) return true;
+    for (const c of this.g.traffic.cars) if (c.mesh && c.mesh.userData.police && !c.player && Math.hypot(c.x - x, c.y - y) < r) return true;
+    const P = this.g.people; if (P) for (const w of P.walkers) if (w.cop) { const q = w.ch.g.position; if (Math.hypot(q.x - x, -q.z - y) < r) return true; }
+    return false;
   }
   fleeDriver(c) { const P = this.g.people; if (P && P.flee) P.flee(c.x - Math.cos(c.h) * 2, c.y + Math.sin(c.h) * 2); }
   wasted() { this.clear(); for (const u of this.units) u.leave = 0.01; this.held = false; }
@@ -145,6 +165,8 @@ export class Crime {
     if (P) for (const w of P.walkers) { const q = w.ch.g.position; T.push({ x: q.x, y: -q.z, z: q.y + 1.1, r: 0.55, h: 0.9, ped: w }); }
     for (const c of this.g.traffic.cars) { if (c.dead || c === p.car) continue; T.push({ x: c.x, y: c.y, z: c.gy + 0.8, r: 1.5, h: 0.9, car: c }); }
     for (const u of this.units) if (!u.dead) T.push({ x: u.x, y: u.y, z: u.gy + 0.8, r: 1.6, h: 0.9, unit: u });
+    for (const a of this.agents || []) if (!a.dead) T.push({ x: a.x, y: a.y, z: a.z + 1.1, r: 0.6, h: 1.0, agent: a });
+    if (this.air && !this.air.dead) T.push({ x: this.air.x, y: this.air.y, z: this.air.alt + 1.5, r: 2.6, h: 2, air: this.air });
     return T;
   }
   origin() {
@@ -168,7 +190,7 @@ export class Crime {
     const o = this.origin(), T = this.targets();
     if (W.melee) {
       const ch = p.char; if (ch) ch.pose = { throw: 0 };
-      for (const t of T) { if (!t.ped) continue; const dx = t.x - p.x, dy = t.y - p.y, d = Math.hypot(dx, dy); if (d < W.range && (dx * o.fx + dy * o.fy) / (d || 1) > 0.3) { this.hitPed(t.ped, W.dmg, dx, dy); break; } }
+      for (const t of T) { if (!t.ped && !t.agent) continue; const dx = t.x - p.x, dy = t.y - p.y, d = Math.hypot(dx, dy); if (d < W.range && (dx * o.fx + dy * o.fy) / (d || 1) > 0.3) { if (t.agent) this.hitAgent(t.agent, W.dmg, dx, dy); else this.hitPed(t.ped, W.dmg, dx, dy); break; } }
       return;
     }
     if (W.strike) { const a = this.aim(o, 160, T), tx = a.lock ? a.lock.x : p.x + o.fx * 70, ty = a.lock ? a.lock.y : p.y + o.fy * 70; this.callStrike(tx, ty); return; }
@@ -204,6 +226,8 @@ export class Crime {
     if (hit.ped) this.hitPed(hit.ped, W.dmg, dx, dy);
     else if (hit.car) this.hitCar(hit.car, W.dmg * 0.55);
     else if (hit.unit) this.hitUnit(hit.unit, W.dmg * 0.5);
+    else if (hit.agent) this.hitAgent(hit.agent, W.dmg, dx, dy);
+    else if (hit.air) this.hitAir(W.dmg * 0.4);
     this.puff(ex, ey, ez, 0.14, 0.2);
   }
   // people nearby hear it: they run, and the police are called
@@ -222,6 +246,69 @@ export class Crime {
     this.bodies.push({ ch: w.ch, blood: b, t: 40 }); this.kills++;
     const isCop = !!w.cop;
     this.crime(isCop ? 2 : 1, isCop ? 'You killed a police officer!' : 'Murder!');
+  }
+  // ---------------------------------------------------------------- three stars and up: the Air Wing, and officers down the ropes
+  hitAgent(a, dmg, dx, dy) {
+    a.hp -= dmg; if (a.hp > 0 || a.dead) return; a.dead = true; if (a.rope) { this.scene.remove(a.rope); a.rope = null; }
+    const g = a.ch.g, gy = standY(a.x, a.y); g.rotation.order = 'YXZ'; g.rotation.x = -Math.PI / 2; g.rotation.y = Math.atan2(dx, -dy); g.position.set(a.x, gy + 0.22, -a.y);
+    const b = new THREE.Mesh(this.disc, this.mBlood); b.scale.setScalar(0.6); b.position.set(a.x, gy + 0.03, -a.y); this.scene.add(b);
+    this.bodies.push({ ch: a.ch, blood: b, t: 40 }); this.kills++; this.crime(1.2, 'You killed a police officer!');
+  }
+  hitAir(dmg) {
+    const a = this.air; if (!a || a.dead) return; a.hp -= dmg; if (a.hp > 0) return; a.dead = true;
+    this.boom(a.x, a.y, a.alt, 12, false); this.scene.remove(a.mesh); if (a.cone) this.scene.remove(a.cone); this.air = null; this.airBack = 45; this.crime(1.5, 'You shot down a police helicopter!');
+  }
+  updateAir(dt) {
+    const p = this.g.player, want = this.stars >= 3 && !(this.g.deadT > 0); this.agents ||= [];
+    if (this.airBack > 0) this.airBack -= dt;
+    if (want && !this.air && !(this.airBack > 0)) {
+      const mesh = makeHeli(); mesh.traverse(m => { if (m.isMesh && m.material && m.material.color && m.material.color.getHex() === 0xc8202c) { m.material = m.material.clone(); m.material.color.set(0xf4f4f0); } });
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.22, 2.7), new THREE.MeshLambertMaterial({ color: 0x0b6b3a })); stripe.position.set(0, 1.55, -0.1); mesh.add(stripe);
+      const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 7, 1, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xdfeaff, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      const an = Math.random() * 6.28; this.scene.add(mesh, cone);
+      this.air = { mesh, cone, x: p.x + Math.cos(an) * 320, y: p.y + Math.sin(an) * 320, alt: p.gy + 90, h: 0, spin: 0, hp: 500, dropT: 5, pitch: 0, roll: 0 };
+      toast('🚁 Dubai Police Air Wing is over you. Officers are coming down the ropes!', 3600);
+    }
+    const a = this.air;
+    if (a) {
+      if (!want && !a.leave) a.leave = 7;
+      const floor = Math.max(p.gy, ground(p.x, p.y)) + 30, tx = a.leave ? a.x + Math.sin(a.h) * 60 : p.x - Math.sin(p.h || 0) * 16, ty = a.leave ? a.y + Math.cos(a.h) * 60 : p.y - Math.cos(p.h || 0) * 16;
+      const dx = tx - a.x, dy = ty - a.y, d = Math.hypot(dx, dy), sp = Math.min(60, d * 1.4), k = d > 0.5 ? sp * dt / d : 0;
+      a.x += dx * k; a.y += dy * k; a.alt += ((a.leave ? floor + 60 : floor) - a.alt) * Math.min(1, dt * 0.8);
+      if (!a.leave) a.h = Math.atan2(p.x - a.x, p.y - a.y); a.spin += dt * 26; a.pitch = Math.min(0.25, sp / 240);
+      syncHeli(a);
+      const hd = Math.hypot(p.x - a.x, p.y - a.y, a.alt - p.gy); a.cone.visible = !a.leave;
+      a.cone.position.set((a.x + p.x) / 2, (a.alt + p.gy) / 2, -(a.y + p.y) / 2); a.cone.scale.set(1, hd, 1); a.cone.lookAt(p.x, p.gy, -p.y); a.cone.rotateX(Math.PI / 2);
+      if (a.leave && (a.leave -= dt) <= 0) { this.scene.remove(a.mesh, a.cone); this.air = null; }
+      else if (!a.leave && p.mode !== 'heli' && Math.hypot(p.x - a.x, p.y - a.y) < 45 && Math.abs(p.v || 0) < 14 && (a.dropT -= dt) <= 0) {
+        const live = this.agents.filter(q => !q.dead).length, cap = this.stars >= 5 ? 8 : this.stars >= 4 ? 6 : 4;
+        a.dropT = this.stars >= 5 ? 6 : this.stars >= 4 ? 9 : 12;
+        for (let i = 0; i < 2 && live + i < cap; i++) {
+          const ch = new Character({ glb: 'police_officer', skin: 0xc69373, shirt: 0x12251a, pants: 0x12251a, hair: 0x15100d }); this.scene.add(ch.g);
+          const ox = (i ? 1.6 : -1.6), rope = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({ color: 0x111111 })); rope.frustumCulled = false; this.scene.add(rope);
+          this.agents.push({ ch, x: a.x + ox, y: a.y, z: a.alt - 1.5, ox, state: 'rope', hp: 130, shootT: 1 + Math.random(), rope });
+        }
+      }
+    }
+    for (const q of this.agents) {
+      if (q.dead) continue; const g = q.ch.g, d = Math.hypot(p.x - q.x, p.y - q.y);
+      if (q.state === 'rope') {
+        const gz = standY(q.x, q.y); q.z -= 7 * dt; if (a && !a.dead) { q.x = a.x + q.ox; q.y = a.y; }
+        if (q.rope && a) { const P = q.rope.geometry.attributes.position; P.setXYZ(0, a.x + q.ox, a.alt + 0.6, -a.y); P.setXYZ(1, q.x, q.z + 1.6, -q.y); P.needsUpdate = true; }
+        if (q.z <= gz || !a) { q.z = gz; q.state = 'ground'; if (q.rope) { this.scene.remove(q.rope); q.rope = null; } }
+        q.ch.animate(dt, { speed: 0 }); g.position.set(q.x, q.z + 0.05, -q.y); g.rotation.y = Math.PI - Math.atan2(p.x - q.x, p.y - q.y); continue;
+      }
+      if (this.stars === 0 || d > 240) { q.gone = (q.gone || 0) + dt; if (q.gone > 5 || d > 240) { this.scene.remove(g); q.dead = true; continue; } }
+      const hh = Math.atan2(p.x - q.x, p.y - q.y); let sp = 0;
+      if (d > 13 && this.stars > 0) { sp = 3.6; q.x += Math.sin(hh) * sp * dt; q.y += Math.cos(hh) * sp * dt; }
+      q.z = standY(q.x, q.y); q.ch.animate(dt, { speed: sp, run: sp > 0 }); g.position.set(q.x, q.z + 0.05, -q.y); g.rotation.y = Math.PI - hh;
+      if (this.stars > 0 && d < 55 && (q.shootT -= dt) <= 0 && !(this.g.deadT > 0)) {
+        q.shootT = 0.9 + Math.random() * 0.9; const hit = Math.random() < (p.mode === 'foot' ? 0.5 : 0.3) * Math.max(0.3, 1 - d / 70);
+        this.tracer(q.x, q.y, q.z + 1.4, p.x + (hit ? 0 : (Math.random() - 0.5) * 3), p.y + (hit ? 0 : (Math.random() - 0.5) * 3), p.gy + 1.1, true); sfx.gun && sfx.gun('rifle', Math.max(0.15, 0.6 - d / 120));
+        if (hit) hurt(4 + this.stars, 0, 0, 'shot');
+      }
+    }
+    if (this.agents.length > 24) this.agents = this.agents.filter(q => !q.dead);
   }
   hitCar(c, dmg) {
     c.hp = (c.hp ?? 160) - dmg;
@@ -269,6 +356,8 @@ export class Crime {
     if (P) for (const w of [...P.walkers]) { const q = w.ch.g.position, d = Math.hypot(q.x - x, -q.z - y); if (d < R && Math.abs(q.y - z) < R) this.hitPed(w, 400, q.x - x, -q.z - y); else if (d < R * 6) { w.sp = 4.8; w.pause = 0; w.panic = 14; } }
     for (const c of this.g.traffic.cars) { if (c.dead || c.blown) continue; const d = Math.hypot(c.x - x, c.y - y); if (d < R + 1.5 && Math.abs(c.gy - z) < R + 3) { c.hp = (c.hp ?? 160) - (420 * (1 - d / (R + 1.5)) + 60); if (c.hp <= 0) setTimeout(() => this.blowCar(c), 120 + Math.random() * 250); } }
     for (const u of this.units) { if (u.dead) continue; const d = Math.hypot(u.x - x, u.y - y); if (d < R + 1.5) this.hitUnit(u, 420 * (1 - d / (R + 1.5)) + 60); }
+    for (const a of this.agents || []) { if (!a.dead && Math.hypot(a.x - x, a.y - y, a.z - z) < R) this.hitAgent(a, 400, a.x - x, a.y - y); }
+    if (this.air && !this.air.dead && Math.hypot(this.air.x - x, this.air.y - y, this.air.alt - z) < R + 3) this.hitAir(400);
     if (!(this.g.deadT > 0)) { const d = Math.hypot(p.x - x, p.y - y, (p.gy + 1) - z), k = p.mode === 'foot' ? 1 : 0.45; if (d < R) hurt(Math.round((85 * (1 - d / R) + 8) * k), (p.x - x) / (d || 1), (p.y - y) / (d || 1), 'boom'); }
     if (mine) this.crime(0.8, 'Explosion!');
   }
@@ -296,7 +385,7 @@ export class Crime {
   updateUnits(dt) {
     const p = this.g.player, want = this.stars;
     const live = this.units.filter(u => !u.dead && u.leave == null).length;
-    if (live < want && (this.spawnT -= dt) <= 0) { this.spawnT = 1.2; this.spawnUnit(); }
+    if (live < want && (this.spawnT -= dt) <= 0) { this.spawnT = this.stars <= 1 ? 9 : 1.2; this.spawnUnit(); }
     let nearest = 1e9, busting = false; const pgElev = p.gy - ground(p.x, p.y) > 2.5 && p.mode !== 'heli';
     for (const u of this.units) {
       if (u.dead) continue;
@@ -341,8 +430,8 @@ export class Crime {
     if (busting && this.stars > 0) { if ((this.bustT += dt) > 2.6) { this.bustT = 0; this.busted(); } } else this.bustT = Math.max(0, this.bustT - dt * 2);
     // out of sight long enough: they give up
     if (this.stars > 0) {
-      const seen = nearest < 130; this.elStars.classList.toggle('search', !seen);
-      if (seen) this.unseen = 0; else if ((this.unseen += dt) > 16 + this.stars * 6) this.clear('✅ You lost the police.');
+      const seen = nearest < (this.stars <= 1 ? 70 : 130) || (this.air && !this.air.leave && this.stars >= 3 && Math.hypot(this.air.x - p.x, this.air.y - p.y) < 90); this.elStars.classList.toggle('search', !seen);
+      if (seen) this.unseen = 0; else if ((this.unseen += dt) > (this.stars <= 1 ? 7 : 16 + this.stars * 6)) this.clear('✅ You lost the police.');
       this.sirenVol = nearest < 320 ? Math.max(0.06, 1 - nearest / 320) : 0; this.sirenYelp = nearest < 60;
     }
   }
@@ -414,6 +503,7 @@ export class Crime {
     // heat cools slowly while nothing new happens (never below the current star until the police lose you)
     if (this.stars === 0 && this.heat > 0) this.heat = Math.max(0, this.heat - dt * 0.03);
     this.updateUnits(dt);
+    this.updateAir(dt);
     if (sfx.sirenSet) sfx.sirenSet(this.stars > 0 && !this.g.paused && !document.hidden ? (this.sirenVol || 0) : 0, !!this.sirenYelp);
   }
 }

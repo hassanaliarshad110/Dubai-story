@@ -1,0 +1,23 @@
+name: Ali voice
+on:
+  push:
+    paths: ['tts/**', '.github/workflows/tts.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  tts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg espeak-ng
+      - run: python tts/tts.py audio/ali
+      - name: Commit
+        run: |
+          git config user.name "Hassan Ali"
+          git config user.email "hassanaliarshad110@users.noreply.github.com"
+          git add -A audio/ali
+          git diff --cached --quiet || git commit -m "Ali's voice lines"
+          git pull -q --rebase origin main && git push

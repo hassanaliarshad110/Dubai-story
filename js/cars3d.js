@@ -153,15 +153,19 @@ export function makeCar3D(kind) {
 
 // UAE number plates: Dubai (white, the code letter and DUBAI on the left) and Abu Dhabi (the red band with its code)
 const PLATES = [];
+const PLATES_DXB = [];
+export const plateOpt = { dubaiOnly: false };
 function plateTexture() {
-  if (PLATES.length >= 28) return PLATES[Math.random() * PLATES.length | 0];
-  const ad = Math.random() < 0.3, c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
+  const only = plateOpt.dubaiOnly;
+  if (only && PLATES_DXB.length >= 14) return PLATES_DXB[Math.random() * PLATES_DXB.length | 0];
+  if (!only && PLATES.length >= 28) return PLATES[Math.random() * PLATES.length | 0];
+  const ad = !only && Math.random() < 0.3, c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
   g.fillStyle = '#f7f7f4'; g.fillRect(0, 0, 256, 64); g.strokeStyle = '#1a1a1a'; g.lineWidth = 4; g.strokeRect(2, 2, 252, 60);
   g.fillStyle = '#111'; g.textBaseline = 'middle'; g.textAlign = 'center';
   const num = String(1000 + Math.random() * 98999 | 0);
   if (ad) { g.fillStyle = '#c8102e'; g.fillRect(4, 4, 58, 56); g.fillStyle = '#fff'; g.font = '800 34px Arial, sans-serif'; g.fillText(String(1 + (Math.random() * 20 | 0)), 33, 34); g.fillStyle = '#111'; g.font = '700 13px Arial, sans-serif'; g.fillText('ABU DHABI', 108, 14); g.font = '800 40px Arial, sans-serif'; g.fillText(num, 160, 40); }
   else { g.font = '800 34px Arial, sans-serif'; g.fillText('ABCDEFGHIJKLMNOPRSTUVWXYZ'[Math.random() * 25 | 0], 30, 26); g.font = '700 12px Arial, sans-serif'; g.fillText('DUBAI', 30, 52); g.fillRect(58, 8, 2, 48); g.font = '800 42px Arial, sans-serif'; g.fillText(num, 158, 34); }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; PLATES.push(t); return t;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; PLATES.push(t); if (!ad) PLATES_DXB.push(t); return t;
 }
 const PLATE_GEO = new THREE.PlaneGeometry(0.54, 0.135);
 export function addPlates(g) {

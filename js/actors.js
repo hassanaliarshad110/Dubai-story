@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { busSignTexture } from './textures.js?v=11112231';
 import { vehiclesReady, makeKarachiVehicle } from './vehicles.js?v=11112231';
-import { makeCar3D, addPlates, CAR3D } from './cars3d.js?v=11112231';
+import { makeCar3D, addPlates, CAR3D, plateOpt } from './cars3d.js?v=11112231';
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const mat = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
@@ -70,7 +70,7 @@ function dubaiPolice() {
     const lr = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.46, 0.11, 0.24), red), lb = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.46, 0.11, 0.24), blue);
     lr.position.set(-bw * 0.26, roofY + 0.08, b.position.z); lb.position.set(bw * 0.26, roofY + 0.08, b.position.z); g.add(lr, lb);
     u.beacons = [lr, lb]; u.police = true; u.kind = 'police'; u.name = sup ? R.name : 'Dubai Police ' + R.name;
-    return addPlates(g);
+    plateOpt.dubaiOnly = true; try { return addPlates(g); } finally { plateOpt.dubaiOnly = false; }
   }
   return null;
 }

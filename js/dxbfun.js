@@ -10,6 +10,9 @@ import { sfx } from './sound.js?v=11112231';
 import { heal } from './health.js?v=11112231';
 import { loader } from './gltf.js?v=11112231';
 import { makeCar } from './actors.js?v=11112231';
+import { plateOpt } from './cars3d.js?v=11112231';
+import { Character } from './rig.js?v=11112231';
+import { standY } from './tiles.js?v=11112231';
 import { TYRE_Y, rotY } from './player.js?v=11112231';
 
 // 25, 27C Street, Al Garhoud: the cream villa with the arched windows and the breeze-block parapet, on its real plot
@@ -40,6 +43,19 @@ export const HOMES = {
   farah: { x: 5784.7, y: -10423.8, h: 0, name: 'AB Residence 2, Al Warsan', car: 'tiida' },      // her black Tiida waits outside
 };
 const SALIK = [['Al Garhoud Bridge', -265, -1236], ['Al Maktoum Bridge', -1894, 856], ['Business Bay Crossing', 951, -1796], ['Airport Tunnel', 3020, 610], ['Al Safa', -7700, -5560], ['Infinity Bridge', -3959, 3756]];
+// Ali's lines: [Arabic as spoken, what it means]
+export const ALI = {
+  karak: [['يا محمد! واحد كرك!', 'Muhammad! Wahid karak!'], ['يا محمد! واحد كرك، سكر زيادة!', 'Muhammad! One karak, extra sugar!']],
+  flash: [['لا لا لا! مخالفة ثانية؟ والله حرام!', 'No no no! Another fine? Wallah, haram!'], ['يا سلام! صورة حلوة، بس غالية!', 'Ya salam! Nice photo, but expensive!']],
+  jam: [['يا الله، شو هالزحمة! كل يوم نفس الشي!', 'Ya Allah, this traffic! Same thing every day!'], ['يلا يلا يلا! تحرك يا حبيبي!', 'Yalla yalla yalla! Move, habibi!']],
+  police: [['يا ساتر! الشرطة! يلا يلا!', 'Ya satir! Police! Yalla yalla!'], ['أنا ما سويت شي، والله!', 'I did nothing, wallah!']],
+  steal: [['معليش حبيبي، بس استعارة! برجعها بكرة إن شاء الله!', 'Sorry habibi, just borrowing! Back tomorrow, inshallah!']],
+  lost: [['خلاص! راحوا! أنا الأسطورة!', 'Khalas! They are gone! I am the legend!']],
+  salik: [['سالك مرة ثانية؟ أدفع عشان أوقف في الزحمة!', 'Salik again? I pay to sit in traffic!']],
+  hot: [['حر! حر! وين المكيف؟', 'Hot! Hot! Where is the AC?']],
+  pay: [['خذوا فلوسي كلها، خلاص!', 'Take all my money, khalas!']],
+  wasted: [['آخ... قولوا لأمي إني كنت ولد زين.', 'Akh... tell my mother I was a good boy.']],
+};
 const FINE = over => over > 80 ? 3000 : over > 60 ? 2000 : over > 50 ? 1500 : over > 40 ? 1000 : over > 30 ? 700 : 600;
 const fmt = n => 'AED ' + Math.round(n).toLocaleString('en-US');
 const CSS = `#fines { position: fixed; right: 10px; top: calc(env(safe-area-inset-top) + 92px); z-index: 22; background: rgba(15,23,32,.86); color: #fff; border: 0; border-right: 4px solid #ff3b3b; border-radius: 10px; padding: 6px 10px; font: 800 13px system-ui, sans-serif; text-align: right; }
@@ -91,6 +107,7 @@ export class DubaiFun {
     this.flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
     this.flashBall = new THREE.Mesh(new THREE.SphereGeometry(1.6, 10, 8), this.flashMat); this.flashBall.visible = false; scene.add(this.flashBall);
     // ---- karak: cafeterias that bring the tea to your window
+    fetch('data/biz.json').then(r => r.json()).then(d => { const P = game.people; if (!P) return; const G = new Map(); for (const b of d.b) { if (!/shop|food|cafe|restaurant/i.test(b[3])) continue; const k = Math.floor(b[0] / 150) + ',' + Math.floor(b[1] / 150); (G.get(k) || G.set(k, []).get(k)).push(b); } P.shops = G; }).catch(() => { });
     this.caf = []; fetch('data/karak.json').then(r => r.json()).then(d => { this.caf = d; }).catch(() => { });
     const horn = sfx.horn && sfx.horn.bind(sfx); if (horn) sfx.horn = (...a) => { horn(...a); this.honk(); };
     // ---- OMNIYAT signs on the roofs
@@ -110,7 +127,7 @@ export class DubaiFun {
   pay() {
     const s = this.s, M = this.g.missions; if (!(s.due > 0)) return toast('No fines to pay. For now.');
     const have = M ? M.money : 0; if (have < 1) return toast(`You owe ${fmt(s.due)} and your wallet is empty. Do a mission.`);
-    const p = Math.min(have, s.due); M.earn(-p); s.due -= p; s.paid += p; this.save(); this.draw(true);
+    const p = Math.min(have, s.due); M.earn(-p); this.say('pay', true); s.due -= p; s.paid += p; this.save(); this.draw(true);
     toast(s.due > 0 ? `Paid ${fmt(p)}. Still ${fmt(s.due)} to go.` : `✅ All fines paid (${fmt(p)}). Dubai Police thanks you.`);
   }
   fine(n, why) { this.s.due += n; this.save(); this.draw(true); if (why) toast(why); }
@@ -118,10 +135,24 @@ export class DubaiFun {
   honk() {
     const p = this.g.player; if (!p || p.mode !== 'car' || Math.abs(p.v) > 2 || this.t - (this.lastKarak || -99) < 8) return;
     let best = null, bd = 45; for (const c of this.caf) { const d = Math.hypot(c[1] - p.x, c[2] - p.y); if (d < bd) { bd = d; best = c; } }
+    const SH = this.g.people && this.g.people.shops;      // any restaurant will do
+    if (!best && SH) for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const b of SH.get((Math.floor(p.x / 150) + i) + ',' + (Math.floor(p.y / 150) + j)) || []) { if (b[3] !== 'food') continue; const d = Math.hypot(b[0] - p.x, b[1] - p.y); if (d < bd) { bd = d; best = [b[2], b[0], b[1]]; } }
     if (!best) return; this.lastKarak = this.t; this.karaks = (this.karaks || 0) + 1; this.lastKarakAt = best[0];
+    this.say('karak', true);
+    // the cafeteria boy runs out with the tray, hands it over at the window and walks back
+    if (!this.waiter) { const ch = new Character({ glb: 'npc_teen', skin: 0xb98260, shirt: 0xc8102e, pants: 0x1c1c1c, hair: 0x15100d }); const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.11, 8), new THREE.MeshLambertMaterial({ color: 0xf5f0e6 })); cup.position.set(0.24, 1.08, 0.3); ch.g.add(cup); this.waiter = { ch, cup }; }
+    const w = this.waiter, ang = Math.atan2(best[1] - p.x, best[2] - p.y), d0 = Math.min(Math.max(bd, 12), 22);
+    Object.assign(w, { on: true, sx: p.x + Math.sin(ang) * d0, sy: p.y + Math.cos(ang) * d0, tx: p.x + Math.sin(p.h + Math.PI / 2) * 1.6, ty: p.y + Math.cos(p.h + Math.PI / 2) * 1.6, u: 0, st: 'out', wait: 0 }); w.cup.visible = true; this.scene.add(w.ch.g);
     const M = this.g.missions; if (M && M.money >= 1.5) M.earn(-1.5); heal(15);
     toast(`☕ ${best[0]}: one karak to your window. AED 1.50. ${['Extra sugar, as always.', 'Zaafran? Next time.', 'The boy ran. In this heat.', 'Chips Oman paratha tomorrow.'][this.karaks % 4]}`);
     if (sfx.chime) sfx.chime();
+  }
+  // Ali talks. Arabic, loudly. (played only when you are Ali; the words are shown too)
+  say(key, force) {
+    if (this.g.story !== 'ali' || (!force && this.t - (this.saidT || -99) < 9)) return; this.saidT = this.t;
+    const L = ALI[key]; if (!L) return; const i = Math.floor(Math.random() * L.length), l = L[i];
+    try { if (this.voice) this.voice.pause(); const a = this.voice = new Audio(`audio/ali/${key}${i}.mp3`); a.volume = 1; a.play().catch(() => { }); } catch (e) { }
+    toast(`🗣️ Ali: “${l[1]}”  ${l[0]}`, 4200);
   }
   radarMesh(r) {
     const g = new THREE.Group(); for (let i = 0; i < 3; i++) g.add(new THREE.Mesh(this.radarGeo[i], this.radarMat[i]));
@@ -141,27 +172,40 @@ export class DubaiFun {
         this.fl.classList.remove('go'); void this.fl.offsetWidth; this.fl.classList.add('go'); if (sfx.camera) sfx.camera();
         this.flashBall.position.set(r.x, ground(r.x, r.y) + 3.6, -r.y); this.flashBall.visible = true; this.flashMat.opacity = 1;
         this.fine(f, `📸 FLASH! ${Math.round(kmh)} in a ${lim} zone. ${fmt(f)}${over > 60 ? ' and 12 black points' : over > 40 ? ' and 6 black points' : ''}. ${['Smile.', 'The radar never sleeps.', 'That is one expensive selfie.', 'Habibi, slow down.', 'Limit + 20, not limit + ' + over + '.'][this.s.n % 5]}`);
+        this.say('flash');
         if (this.s.n === 1) setTimeout(() => toast('Tap the red Fines box (top right) to pay them off.'), 5000);
       }
     }
     // ---- Salik
     if (car && st && st.kind <= 3) for (const s of SALIK) {
       const d = Math.hypot(s[1] - p.x, s[2] - p.y);
-      if (d < 110 && !(this.salikCool[s[0]] > this.t)) { this.salikCool[s[0]] = this.t + 60; const peak = this.rush(); const f = peak ? 6 : 4; this.s.salik += f; const M = g.missions; if (M && M.money >= f) M.earn(-f); this.save(); this.draw(true); toast(`🟥 Salik · ${s[0]} gate: ${fmt(f)}${peak ? ' (peak hours)' : ''}. Beep.`); if (sfx.chime) sfx.chime(); }
+      if (d < 110 && !(this.salikCool[s[0]] > this.t)) { this.salikCool[s[0]] = this.t + 60; const peak = this.rush(); const f = peak ? 6 : 4; this.s.salik += f; const M = g.missions; if (M && M.money >= f) M.earn(-f); this.save(); this.draw(true); toast(`🟥 Salik · ${s[0]} gate: ${fmt(f)}${peak ? ' (peak hours)' : ''}. Beep.`); this.say('salik'); if (sfx.chime) sfx.chime(); }
     }
     // ---- rush hour: the big roads crawl
     const rush = this.rush(), tr = g.traffic;
     if (tr) {
       if (this.baseMax == null) this.baseMax = tr.max;
       tr.max = Math.round(this.baseMax * (rush ? 2.2 : 1)); tr.jam = rush ? 0.3 : 1;
-      if (rush && car && st && st.kind <= 2 && (this.jamT -= dt) <= 0) { this.jamT = 150; toast(['🚗🚗🚗 Rush hour. Sheikh Zayed Road is a car park again.', '🚗🚗🚗 Google Maps says 9 minutes. It is lying.', '🚗🚗🚗 Everyone left the office at the same time. Again.', '🚗🚗🚗 Sharjah traffic. Nothing to add.'][Math.floor(this.t / 150) % 4]); }
+      if (rush && car && st && st.kind <= 2 && (this.jamT -= dt) <= 0) { this.jamT = 150; this.say('jam'); toast(['🚗🚗🚗 Rush hour. Sheikh Zayed Road is a car park again.', '🚗🚗🚗 Google Maps says 9 minutes. It is lying.', '🚗🚗🚗 Everyone left the office at the same time. Again.', '🚗🚗🚗 Sharjah traffic. Nothing to add.'][Math.floor(this.t / 150) % 4]); }
     }
     // ---- parking: leave a car on a street in the old town and forget to pay
     if (car) { this.wasCar = true; this.parkT = 0; }
     else if (this.wasCar) { this.parkT += dt; if (this.parkT > 75) { this.wasCar = false; if (Math.random() < 0.45 && p.mode === 'foot') this.fine(150, '🅿️ RTA: parking fine AED 150. You forgot to SMS 7275.'); } }
     // ---- heat
     const hr = g.clock ?? 12;
-    if (p.mode === 'foot' && hr > 11.5 && hr < 15.5 && (this.heatT -= dt) <= 0) { this.heatT = 240; toast(['🥵 46°C, feels like 54. Find a mall.', '🥵 The steering wheel will be 80°C when you get back.', '🥵 Nobody walks at this hour. Nobody.'][Math.floor(this.t / 240) % 3]); }
+    if (p.mode === 'foot' && hr > 11.5 && hr < 15.5 && (this.heatT -= dt) <= 0) { this.heatT = 240; this.say('hot'); toast(['🥵 46°C, feels like 54. Find a mall.', '🥵 The steering wheel will be 80°C when you get back.', '🥵 Nobody walks at this hour. Nobody.'][Math.floor(this.t / 240) % 3]); }
+    // ---- Ali reacts to the police, to losing them, to dying
+    const cr = g.crime, stars = cr ? cr.stars : 0;
+    if (stars > (this.pStars || 0)) this.say(stars === 1 && cr.lastWhy && /car/i.test(cr.lastWhy) ? 'steal' : 'police'); else if (!stars && this.pStars && !(g.deadT > 0)) this.say('lost', true);
+    this.pStars = stars; if (g.deadT > 0 && !this.wasDead) this.say('wasted', true); this.wasDead = g.deadT > 0;
+    // ---- the karak boy
+    const w = this.waiter;
+    if (w && w.on) {
+      const A = w.st === 'out' ? [w.sx, w.sy, w.tx, w.ty] : [w.tx, w.ty, w.sx, w.sy], L = Math.hypot(A[2] - A[0], A[3] - A[1]) || 1;
+      if (w.st === 'give') { w.ch.animate(dt, { speed: 0 }); if ((w.wait += dt) > 1.4) { w.st = 'back'; w.u = 0; w.cup.visible = false; } }
+      else { w.u += 3.4 * dt / L; w.ch.animate(dt, { speed: 3.4, run: true }); if (w.u >= 1) { w.u = 1; if (w.st === 'out') { w.st = 'give'; w.wait = 0; } else { w.on = false; this.scene.remove(w.ch.g); } } }
+      const x = A[0] + (A[2] - A[0]) * w.u, y = A[1] + (A[3] - A[1]) * w.u; w.ch.g.position.set(x, standY(x, y) + 0.05, -y); w.ch.g.rotation.y = Math.PI - Math.atan2(A[2] - A[0], A[3] - A[1]);
+    }
     // ---- home: the villa on 27C Street and the cars outside it
     const hx = (HOME.x0 + HOME.x1) / 2, hy = (HOME.y0 + HOME.y1) / 2, hd = Math.hypot(hx - p.x, hy - p.y);
     if (!this.home && hd < 700) {
@@ -172,12 +216,23 @@ export class DubaiFun {
         const grp = new THREE.Group(); o.position.set(-c.x, -bb.min.y, -c.z); grp.add(o);
         grp.scale.set((HOME.x1 - HOME.x0 + 0.7) / s.x, HOME.h / s.y, (HOME.y1 - HOME.y0 + 0.7) / s.z);
         grp.position.set(hx, ground(hx, hy) - 0.05, -hy); this.scene.add(grp); this.home = grp;
+        // the gate in the front wall: sand-coloured boards in a dark brown frame, two leaves, cream posts
+        const c = document.createElement('canvas'); c.width = 512; c.height = 256; const x = c.getContext('2d');
+        x.fillStyle = '#3b2a1c'; x.fillRect(0, 0, 512, 256); x.fillStyle = '#d2bd8a'; for (let i = 0; i < 2; i++) for (let s = 0; s < 14; s++) x.fillRect(14 + i * 250 + s * 17, 16, 13, 224);
+        x.fillStyle = '#3b2a1c'; x.fillRect(250, 0, 12, 256); x.fillStyle = '#1c1c1c'; x.fillRect(236, 120, 8, 26); x.fillRect(268, 120, 8, 26);
+        const gt = new THREE.CanvasTexture(c); gt.colorSpace = THREE.SRGBColorSpace; gt.anisotropy = 4;
+        const gate = new THREE.Group(), gy0 = ground(1145, -151.7);
+        const leaf = new THREE.Mesh(new THREE.BoxGeometry(4.4, 1.95, 0.1), [0, 0, 0, 0, 0, 0].map((_, i) => i >= 4 ? new THREE.MeshLambertMaterial({ map: gt }) : new THREE.MeshLambertMaterial({ color: 0x3b2a1c }))); leaf.position.y = 1.0; gate.add(leaf);
+        for (const sx of [-2.45, 2.45]) { const post = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.3, 0.5), new THREE.MeshLambertMaterial({ color: 0xe9dfc6 })); post.position.set(sx, 1.15, 0); gate.add(post); const cap = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.1, 0.62), new THREE.MeshLambertMaterial({ color: 0xffffff })); cap.position.set(sx, 2.35, 0); gate.add(cap); }
+        gate.position.set(1144.6, gy0, 151.75); this.scene.add(gate);
       }).catch(() => { this.home = 'none'; });
     }
     if (!this.homeCars && hd < 260 && g.traffic && g.traffic.pieces && g.traffic.pieces.length) {
       this.homeCars = true;
-      for (const [k, x] of [['sentra', 1139.6], ['jeep', 1144.4], ['lexus', 1149.2]]) {      // as in the street photo: grey Nissan, black Jeep, white Lexus, nose to the wall
-        const y = -153.2, mesh = makeCar(k), gy = ground(x, y), car = { mesh, parked: true, x, y, h: 0, gy, v: 0, s: 0, dir: 1, piece: g.traffic.pieces[0], mission: true, hp: 200 };
+      // parked nose to the wall, all on Dubai plates: grey Sentra, red Yaris, (the gate), black Jeep, white Sorento
+      for (const [k, x] of [['sentra', 1135.6], ['yaris', 1139.0], ['jeep', 1149.9], ['sorento', 1153.6]]) {
+        plateOpt.dubaiOnly = true; let mesh; try { mesh = makeCar(k); } finally { plateOpt.dubaiOnly = false; }
+        const y = -154.4, gy = ground(x, y), car = { mesh, parked: true, x, y, h: 0, gy, v: 0, s: 0, dir: 1, piece: g.traffic.pieces[0], mission: true, hp: 200 };
         mesh.position.set(x, gy + TYRE_Y, -y); mesh.rotation.y = rotY(0); this.scene.add(mesh); g.traffic.cars.push(car);
       }
     }

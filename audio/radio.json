@@ -1,4 +1,6 @@
 [
-  { "src": "audio/radio/adhoori-chori.mp3", "title": "Adhoori Chori · Aflatoon ft. MC Moe & Nikita" },
-  { "src": "audio/radio/aflatoon-2.mp3", "title": "Aflatoon" }
+ {
+  "src": "audio/radio/adhoori-chori.mp3",
+  "title": "Adhoori Chori · Aflatoon ft. MC Moe & Nikita"
+ }
 ]

@@ -55,6 +55,7 @@ const CSS = `
 body.cine #wanted, body.cine #wp-fire, body.cine #wp-next, body.cine #wp-name { display: none; }
 @media (orientation: landscape) { #wp-fire { right: 236px; bottom: calc(env(safe-area-inset-bottom) + 26px); } #wp-next { right: 314px; bottom: calc(env(safe-area-inset-bottom) + 34px); } #wp-name { right: 236px; bottom: calc(env(safe-area-inset-bottom) + 98px); } }`;
 
+const V1 = new THREE.Vector3();
 export class Crime {
   constructor(game, scene) {
     this.g = game; this.scene = scene; this.w = 0; this.held = false; this.cool = 0;
@@ -66,7 +67,7 @@ export class Crime {
     this.mFlash = new THREE.MeshBasicMaterial({ color: 0xfff2b0, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
     this.mSmoke = new THREE.MeshBasicMaterial({ color: 0x8a8a8a, transparent: true, opacity: 0.5, depthWrite: false });
     this.mRocket = new THREE.MeshLambertMaterial({ color: 0x4a5a3a }); this.mGrenade = new THREE.MeshLambertMaterial({ color: 0x2f3b2a });
-    this.mWreck = new THREE.MeshLambertMaterial({ color: 0x191919 }); this.mBlood = new THREE.MeshBasicMaterial({ color: 0x6a0a0a, transparent: true, opacity: 0.75, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
+    this.mWreck = new THREE.MeshLambertMaterial({ color: 0x191919 }); this.mBlood = new THREE.MeshBasicMaterial({ color: 0x9a0d0d, transparent: true, opacity: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
     this.mScorch = new THREE.MeshBasicMaterial({ color: 0x0a0a0a, transparent: true, opacity: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 });
     this.mGun = new THREE.MeshLambertMaterial({ color: 0x1c1d20 }); this.mWood = new THREE.MeshLambertMaterial({ color: 0x6a4424 }); this.mOlive = new THREE.MeshLambertMaterial({ color: 0x4a5a3a });
     this.disc = new THREE.CircleGeometry(1, 20); this.disc.rotateX(-Math.PI / 2);
@@ -237,21 +238,29 @@ export class Crime {
     if (seen || this.stars > 0 || this.witnesses(x, y, 60)) this.crime(heat, 'Shots fired!');
   }
   hitPed(w, dmg, dx, dy) {
-    w.hp = (w.hp ?? 100) - dmg; const P = this.g.people;
+    w.hp = (w.hp ?? 100) - dmg; const P = this.g.people; { const q = w.ch.g.position; this.splat(q.x + (Math.random() - 0.5), -q.z + (Math.random() - 0.5), standY(q.x, -q.z), 0.12 + Math.random() * 0.15); }
     if (w.hp > 0) { w.sp = 4.6; w.pause = 0; w.panic = 12; this.crime(0.5, 'Assault!'); return; }
     const i = P.walkers.indexOf(w); if (i < 0) return; P.walkers.splice(i, 1);
     const g = w.ch.g, x = g.position.x, y = -g.position.z, gy = standY(x, y);
-    g.rotation.order = 'YXZ'; g.rotation.x = -Math.PI / 2; g.rotation.y = Math.atan2(dx, -dy); g.position.y = gy + 0.22;
-    const b = new THREE.Mesh(this.disc, this.mBlood); b.scale.setScalar(0.5 + Math.random() * 0.4); b.position.set(x, gy + 0.03, -y); this.scene.add(b);
+    this.layDown(w.ch); g.rotation.order = 'YXZ'; g.rotation.x = -Math.PI / 2; g.rotation.y = Math.atan2(dx, -dy); g.position.y = gy + 0.22;
+    const b = this.bloodPool(x, y, gy);
     this.bodies.push({ ch: w.ch, blood: b, t: 40 }); this.kills++;
     const isCop = !!w.cop;
     this.crime(isCop ? 2 : 1, isCop ? 'You killed a police officer!' : 'Murder!');
   }
   // ---------------------------------------------------------------- three stars and up: the Air Wing, and officers down the ropes
+  // a body lies flat with its arms at its sides, in a pool of blood that spreads
+  layDown(ch) { try { for (let i = 0; i < 4; i++) ch.animate(0.4, { speed: 0 }); } catch (e) { } }
+  bloodPool(x, y, gy) {
+    const b = new THREE.Mesh(this.disc, this.mBlood); b.scale.set(0.3, 1, 0.3); b.position.set(x, gy + 0.09, -y); b.renderOrder = 3; b.userData.grow = 0.9 + Math.random() * 0.6; this.scene.add(b);
+    for (let i = 0; i < 5; i++) this.splat(x + (Math.random() - 0.5) * 2.4, y + (Math.random() - 0.5) * 2.4, gy, 0.08 + Math.random() * 0.2);
+    return b;
+  }
+  splat(x, y, gy, r) { const s = new THREE.Mesh(this.disc, this.mBlood); s.scale.set(r, 1, r * (0.6 + Math.random() * 0.8)); s.rotation.y = Math.random() * 6.28; s.position.set(x, gy + 0.085, -y); s.renderOrder = 3; this.scene.add(s); this.fx.push({ m: s, t: 0, life: 40, flat: true }); }
   hitAgent(a, dmg, dx, dy) {
-    a.hp -= dmg; if (a.hp > 0 || a.dead) return; a.dead = true; if (a.rope) { this.scene.remove(a.rope); a.rope = null; }
-    const g = a.ch.g, gy = standY(a.x, a.y); g.rotation.order = 'YXZ'; g.rotation.x = -Math.PI / 2; g.rotation.y = Math.atan2(dx, -dy); g.position.set(a.x, gy + 0.22, -a.y);
-    const b = new THREE.Mesh(this.disc, this.mBlood); b.scale.setScalar(0.6); b.position.set(a.x, gy + 0.03, -a.y); this.scene.add(b);
+    a.hp -= dmg; this.splat(a.x + (Math.random() - 0.5), a.y + (Math.random() - 0.5), standY(a.x, a.y), 0.12 + Math.random() * 0.15); if (a.hp > 0 || a.dead) return; a.dead = true; if (a.rope) { this.scene.remove(a.rope); a.rope = null; }
+    const g = a.ch.g, gy = standY(a.x, a.y); this.layDown(a.ch); g.rotation.order = 'YXZ'; g.rotation.x = -Math.PI / 2; g.rotation.y = Math.atan2(dx, -dy); g.position.set(a.x, gy + 0.22, -a.y);
+    const b = this.bloodPool(a.x, a.y, gy);
     this.bodies.push({ ch: a.ch, blood: b, t: 40 }); this.kills++; this.crime(1.2, 'You killed a police officer!');
   }
   hitAir(dmg) {
@@ -264,7 +273,7 @@ export class Crime {
     if (want && !this.air && !(this.airBack > 0)) {
       const mesh = makeHeli(); mesh.traverse(m => { if (m.isMesh && m.material && m.material.color && m.material.color.getHex() === 0xc8202c) { m.material = m.material.clone(); m.material.color.set(0xf4f4f0); } });
       const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.22, 2.7), new THREE.MeshLambertMaterial({ color: 0x0b6b3a })); stripe.position.set(0, 1.55, -0.1); mesh.add(stripe);
-      const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 7, 1, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xdfeaff, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      const cg = new THREE.CircleGeometry(4.5, 24); cg.rotateX(-Math.PI / 2); const cone = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false })); cone.renderOrder = 4;
       const an = Math.random() * 6.28; this.scene.add(mesh, cone);
       this.air = { mesh, cone, x: p.x + Math.cos(an) * 320, y: p.y + Math.sin(an) * 320, alt: p.gy + 90, h: 0, spin: 0, hp: 500, dropT: 5, pitch: 0, roll: 0 };
       toast('🚁 Dubai Police Air Wing is over you. Officers are coming down the ropes!', 3600);
@@ -277,8 +286,7 @@ export class Crime {
       a.x += dx * k; a.y += dy * k; a.alt += ((a.leave ? floor + 60 : floor) - a.alt) * Math.min(1, dt * 0.8);
       if (!a.leave) a.h = Math.atan2(p.x - a.x, p.y - a.y); a.spin += dt * 26; a.pitch = Math.min(0.25, sp / 240);
       syncHeli(a);
-      const hd = Math.hypot(p.x - a.x, p.y - a.y, a.alt - p.gy); a.cone.visible = !a.leave;
-      a.cone.position.set((a.x + p.x) / 2, (a.alt + p.gy) / 2, -(a.y + p.y) / 2); a.cone.scale.set(1, hd, 1); a.cone.lookAt(p.x, p.gy, -p.y); a.cone.rotateX(Math.PI / 2);
+      const hr = this.g.clock ?? 12, night = hr < 6.2 || hr > 18.3; a.cone.visible = !a.leave && night; a.cone.position.set(p.x, p.gy + 0.12, -p.y);
       if (a.leave && (a.leave -= dt) <= 0) { this.scene.remove(a.mesh, a.cone); this.air = null; }
       else if (!a.leave && p.mode !== 'heli' && Math.hypot(p.x - a.x, p.y - a.y) < 45 && Math.abs(p.v || 0) < 14 && (a.dropT -= dt) <= 0) {
         const live = this.agents.filter(q => !q.dead).length, cap = this.stars >= 5 ? 8 : this.stars >= 4 ? 6 : 4;
@@ -370,6 +378,14 @@ export class Crime {
   flash(x, y, z, r) { const m = new THREE.Mesh(this.sphere, this.mFlash); m.position.set(x, z, -y); m.scale.setScalar(r); this.scene.add(m); this.tracers.push({ m, t: 0.05 }); }
   puff(x, y, z, r0, life) { if (this.fx.length > 140) return; const m = new THREE.Mesh(this.sphere, this.mSmoke); m.position.set(x, z, -y); m.scale.setScalar(r0); this.scene.add(m); this.fx.push({ m, t: 0, life, r0, r1: r0 * 3.5, rise: 0.6, shared: true }); }
   // ---------------------------------------------------------------- the police
+  // take a police car: the nearest unit that has pulled up becomes an ordinary (very wanted) car you can get into
+  offerUnit() {
+    const p = this.g.player, tr = this.g.traffic; let best = null, bd = 5.5;
+    for (const u of this.units) { if (u.dead) continue; const d = Math.hypot(u.x - p.x, u.y - p.y); if (d < bd && Math.abs(u.v || 0) < 6) { bd = d; best = u; } }
+    if (!best || !tr.pieces.length) return; this.units.splice(this.units.indexOf(best), 1);
+    tr.cars.push({ mesh: best.mesh, parked: true, x: best.x, y: best.y, h: best.h, gy: best.gy, v: 0, s: 0, dir: 1, piece: tr.pieces[0], mission: true, hp: 260, owned: false });
+    this.atLeast(2, 'You took a Dubai Police car!'); toast('🚓 Dubai Police car. Siren on the horn.', 2600);
+  }
   spawnUnit() {
     const p = this.g.player, tr = this.g.traffic; let x = null, y = null;
     for (let i = 0; i < 30 && x == null; i++) {
@@ -492,7 +508,7 @@ export class Crime {
       if (f.own) f.m.material.opacity = Math.max(0, 1 - k * k); else if (f.shared && k > 0.6) f.m.scale.multiplyScalar(1 - (k - 0.6) * 2.4);
     }
     for (let i = this.tracers.length - 1; i >= 0; i--) { const t = this.tracers[i]; if ((t.t -= dt) <= 0) { this.scene.remove(t.m); this.tracers.splice(i, 1); } }
-    for (let i = this.bodies.length - 1; i >= 0; i--) { const b = this.bodies[i]; if ((b.t -= dt) <= 0 || Math.hypot(b.ch.g.position.x - p.x, -b.ch.g.position.z - p.y) > 200) { this.scene.remove(b.ch.g); this.scene.remove(b.blood); this.bodies.splice(i, 1); } }
+    for (let i = this.bodies.length - 1; i >= 0; i--) { const b = this.bodies[i]; { const sc = b.blood.scale, gr = b.blood.userData.grow || 0.6; if (sc.x < gr) sc.x = sc.z = Math.min(gr, sc.x + dt * 0.3); } if ((b.t -= dt) <= 0 || Math.hypot(b.ch.g.position.x - p.x, -b.ch.g.position.z - p.y) > 200) { this.scene.remove(b.ch.g); this.scene.remove(b.blood); this.bodies.splice(i, 1); } }
     for (let i = this.wrecks.length - 1; i >= 0; i--) {
       const w = this.wrecks[i]; w.t -= dt; const burn = w.t > 15;
       for (const f of w.fl) { f.visible = burn; f.scale.set(0.8 + Math.random() * 0.5, 0.7 + Math.random() * 0.8, 0.8 + Math.random() * 0.5); }

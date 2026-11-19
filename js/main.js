@@ -276,7 +276,7 @@ function startGame(mode) {
 }
 function placeStart(i) {
   const m = i != null ? missions.list[i] : null;
-  if (game.dubai && game.world.spawn) { const hm = game.fun && game.fun.homeFor(game.story), sp = hm || game.world.spawn; player.mode = 'foot'; player.place(sp.x, sp.y, sp.h || 0); if (hm && hm.car) game.fun.stockCar(hm.x + Math.cos(hm.h || 0) * 3.2, hm.y - Math.sin(hm.h || 0) * 3.2, hm.h || 0, hm.car); if (hm) setTimeout(() => toast(`🏠 ${hm.name}`), 2500); camSnap(); game.unstick.pending = true; return; }
+  if (game.dubai && game.world.spawn) { const hm = game.fun && game.fun.homeFor(game.story), sp = hm || game.world.spawn; player.mode = 'foot'; player.place(sp.x, sp.y, sp.h || 0); if (hm) setTimeout(() => toast(`🏠 ${hm.name}`), 2500); camSnap(); game.unstick.pending = true; return; }
   const at = m && m.startAt ? P[m.startAt] : game.story === 'chris' ? P.kerbyHome : missions.state.home ? P.home : P.martinbrook;
   player.mode = 'foot'; player.place(at.x + (m ? 6 : 0), at.y - (m ? 6 : 0), m ? 0 : Math.PI); camSnap(); game.unstick.pending = true;
   homeStreet();
@@ -459,6 +459,7 @@ onAction('vehicle', () => {
     return;
   }
   if (player.mode === 'foot') {
+    if (game.crime) game.crime.offerUnit();      // a Dubai Police car that has stopped beside you is a car like any other
     const c = traffic.nearestCar(player.x, player.y, 5);
     if (c) { if (game.crime) game.crime.stole(c); traffic.take(c); player.enter(c); sfx.enter(); music.radio(true); $('#speed').hidden = false; toast(c === game.familyCar ? 'The family car' : player.onBike ? 'On the motorbike. Helmet on, ride safely!' : 'Hopped in. Drive safely!'); }
     else toast('No car close by. Walk up to a parked car.');

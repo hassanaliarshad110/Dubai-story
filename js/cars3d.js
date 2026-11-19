@@ -20,7 +20,7 @@ export const CAR3D = {
   patrol: { L: 5.17, W: 1.99, H: 1.94, base: 'dxb_patrol2', name: 'Nissan Patrol' },          // white
   landcruiser: { L: 4.95, W: 1.98, H: 1.9, base: 'dxb_suv', name: 'Toyota Land Cruiser' },   // pearl
   yaris: { L: 3.75, W: 1.69, H: 1.52, base: 'dxb_yaris', name: 'Toyota Yaris 2007' },         // red
-  tiida: { L: 4.39, W: 1.77, H: 1.51, base: 'dxb_tiida17', tint: [0.5, 0.5, 0.53], name: 'Nissan Tiida 2017' },
+  tiida: { L: 4.39, W: 1.77, H: 1.51, base: 'dxb_tiida17', tint: [0.3, 0.3, 0.32], name: 'Nissan Tiida 2017' },
   jeep: { L: 4.75, W: 1.88, H: 1.84, base: 'dxb_jeep', name: 'Jeep Wrangler' },
   sentra: { L: 4.62, W: 1.76, H: 1.5, base: 'dxb_sentra', name: 'Nissan Sentra' },
   lexus: { L: 4.58, W: 1.8, H: 1.43, base: 'dxb_lexus', name: 'Lexus IS' },

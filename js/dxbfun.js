@@ -29,7 +29,7 @@ export const OMNIYAT = [
   { label: 'Vela by OMNIYAT', x: -5141, y: -5975, note: 'Dorchester Collection residences on the water.' },
 ];
 const EXTRA = [
-  { label: 'AB Residence 2, Al Warsan', x: 4875, y: -10490 },
+  { label: 'AB Residence 2, Al Warsan', x: 4940.3, y: -10435.7 },
   { label: '27C Street, Al Garhoud', x: 1137, y: -160 },
   { label: 'Karakccino', x: 1113, y: -1188 },
   { label: 'Karak House', x: -6377, y: -5871 },
@@ -40,7 +40,7 @@ const EXTRA = [
 // where each character lives, and the car that waits outside
 export const HOMES = {
   ali: { x: 1146, y: -158.5, h: 0, name: '27C Street, Al Garhoud' },
-  farah: { x: 4874.5, y: -10490.2, h: 0, name: 'AB Residence 2, Warsan Fourth', car: 'tiida' },      // her black Tiida waits outside
+  farah: { x: 4907.3, y: -10429.5, h: 0.3658, name: 'AB Residence 2, Warsan Fourth', car: 'tiida' },      // her black Tiida waits outside
 };
 const SALIK = [['Al Garhoud Bridge', -265, -1236], ['Al Maktoum Bridge', -1894, 856], ['Business Bay Crossing', 951, -1796], ['Airport Tunnel', 3020, 610], ['Al Safa', -7700, -5560], ['Infinity Bridge', -3959, 3756]];
 // Ali's lines: [Arabic as spoken, what it means]

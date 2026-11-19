@@ -29,7 +29,7 @@ export const OMNIYAT = [
   { label: 'Vela by OMNIYAT', x: -5141, y: -5975, note: 'Dorchester Collection residences on the water.' },
 ];
 const EXTRA = [
-  { label: 'AB Residence 2, Al Warsan', x: 4896.9, y: -10474.5 },
+  { label: 'AB Residence 2, Al Warsan', x: 4902.8, y: -10429.4 },
   { label: '27C Street, Al Garhoud', x: 1137, y: -160 },
   { label: 'Karakccino', x: 1113, y: -1188 },
   { label: 'Karak House', x: -6377, y: -5871 },
@@ -40,7 +40,7 @@ const EXTRA = [
 // where each character lives, and the car that waits outside
 export const HOMES = {
   ali: { x: 1146, y: -158.5, h: 0, name: '27C Street, Al Garhoud' },
-  farah: { x: 4896.9, y: -10474.5, h: 0.3658, name: 'AB Residence 2, Warsan Fourth', car: 'tiida', carAt: [4903.8, -10476.1, 1.9366] },      // her black Tiida waits outside
+  farah: { x: 4902.8, y: -10429.4, h: 0.3658, name: 'AB Residence 2, Warsan Fourth', car: 'tiida', carAt: [4905.8, -10425.2, 0.3658] },      // her black Tiida waits outside
 };
 const SALIK = [['Al Garhoud Bridge', -265, -1236], ['Al Maktoum Bridge', -1894, 856], ['Business Bay Crossing', 951, -1796], ['Airport Tunnel', 3020, 610], ['Al Safa', -7700, -5560], ['Infinity Bridge', -3959, 3756]];
 // Ali's lines: [Arabic as spoken, what it means]
@@ -238,7 +238,7 @@ export class DubaiFun {
       }
     }
     // the red BMW 650i is parked at both homes: outside 27C Street and in front of AB Residence 2
-    for (const b of (this.bmws ||= [{ x: 1131.8, y: -154.4, h: 0 }, { x: 4911.3, y: -10479.0, h: 1.9366 }])) {
+    for (const b of (this.bmws ||= [{ x: 1131.8, y: -154.4, h: 0 }, { x: 4908.4, y: -10418.2, h: 0.3658 }])) {
       const d = Math.hypot(b.x - p.x, b.y - p.y);
       if (b.car && (b.car.dead || d > 520)) { if (d > 520 && !b.car.dead && Math.hypot(b.car.x - b.x, b.car.y - b.y) < 3 && p.car !== b.car) { this.scene.remove(b.car.mesh); const i = g.traffic.cars.indexOf(b.car); if (i >= 0) g.traffic.cars.splice(i, 1); } if (d > 520) b.car = null; }
       if (!b.car && d < 260 && g.traffic && g.traffic.pieces && g.traffic.pieces.length) {

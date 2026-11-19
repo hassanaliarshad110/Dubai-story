@@ -8,7 +8,7 @@ import { BLOCKS } from './stagekit.js?v=11190630';
 import { HIDE_FEAT } from './tiles.js?v=11190630';
 
 export const AB = { x: 4925.7, y: -10455.3, b: 0.3658, L: 48, D: 52, road: 36.5 };
-HIDE_FEAT.push([5, 4931, -10456, 14], [10, 4932, -10461, 14]);      // the empty plot and its wall on the map: the building stands there now      // centre, bearing of its long side, size, distance to the road's middle
+HIDE_FEAT.push([5, 4931, -10456, 14], [10, 4932, -10461, 14], [10, 4923, -10488, 8]);      // the empty plot and its wall on the map: the building stands there now      // centre, bearing of its long side, size, distance to the road's middle
 const DS = THREE.DoubleSide, WHITE = '#eeebe4', GREY = '#5c5e60', DARK = '#3d3f42';
 function tex(w, h, draw, rx = 1, ry = 1) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = 4; return t; }
 const box = (w, h, d, x, y, z, m) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y + h / 2, z); b.castShadow = true; b.receiveShadow = true; return b; };
@@ -95,7 +95,7 @@ export class ABResidence {
     // ---- the road: water-filled barriers on the building's side, striped concrete ones across it
     const inst = (geo, mat, list, cols) => { const im = new THREE.InstancedMesh(geo, mat, list.length), o = new THREE.Object3D(), c = new THREE.Color(); list.forEach(([x, z, ry], i) => { o.position.set(x, geo.parameters.height / 2, z); o.rotation.set(0, ry || 0, 0); o.updateMatrix(); im.setMatrixAt(i, o.matrix); if (cols) im.setColorAt(i, c.set(cols[i % cols.length])); }); im.castShadow = true; grp.add(im); };
     const zr = -AB.road, wb = [], jb = [];
-    for (let x = -22; x <= 44; x += 2.15) { if (!(x > 14.5 && x < 24)) wb.push([x, zr + 4.7 + Math.sin(x * 1.3) * 0.25, Math.sin(x * 2.1) * 0.12]); jb.push([x, zr - 5.4, 0]); }
+    for (let x = -22; x <= 44; x += 2.15) { if (!(x > 14.5 && x < 33)) wb.push([x, zr + 4.7 + Math.sin(x * 1.3) * 0.25, Math.sin(x * 2.1) * 0.12]); jb.push([x, zr - 5.4, 0]); }
     inst(new THREE.BoxGeometry(2.0, 0.95, 0.5), new THREE.MeshLambertMaterial({ color: 0xffffff }), wb, [0xf2f2f0, 0xf2f2f0, 0xe8492c, 0xf2f2f0, 0xe8492c, 0xf2f2f0, 0xf2f2f0, 0xc9352b]);
     inst(new THREE.BoxGeometry(2.05, 0.85, 0.55), new THREE.MeshLambertMaterial({ map: tex(64, 32, (g) => { g.fillStyle = '#e9e6e0'; g.fillRect(0, 0, 64, 32); g.fillStyle = '#b5524a'; g.fillRect(0, 0, 22, 32); g.fillRect(44, 0, 20, 32); }) }), jb);
     // ---- across the road: the building site. A fence of grey panels, sand heaps, the drilling rig and a trailer, street lights

@@ -1410,6 +1410,11 @@ export class TileManager {
     }
     yield; if (gone()) return;
     if (D && STYLE.dubai && layers[L.BARR]) add(buildWalls(layers[L.BARR]), MAT.concrete, { cs: true });
+    if (STYLE.dubai && layers[L.BARR]) {        // walls, fences and hedges are solid (gates are not: that is the way in)
+      const wr = [];
+      for (const f of layers[L.BARR]) { if (f.kind === 5) continue; const r = f.rings[0], n = r.length / 2; for (let i = 1; i < n; i++) { const ax = r[i * 2 - 2], ay = r[i * 2 - 1], bx = r[i * 2], by = r[i * 2 + 1], l = Math.hypot(bx - ax, by - ay); if (l < 0.3) continue; const nx = (by - ay) / l * 0.22, ny = -(bx - ax) / l * 0.22; wr.push([[ax + nx, ay + ny], [bx + nx, by + ny], [bx - nx, by - ny], [ax - nx, ay - ny]]); } }
+      if (wr.length) { const extra = buildCollision(wr); if (coll) { for (const [k, l] of extra.grid) { const c = coll.grid.get(k); if (c) c.push(...l); else coll.grid.set(k, l); } } else coll = extra; }
+    }
     if (layers[L.TREE]) {        // tree trunks block cars and people
       const tr = layers[L.TREE].map(f => { const x = f.rings[0][0], y = f.rings[0][1], s2 = 0.35; return [[x - s2, y - s2], [x + s2, y - s2], [x + s2, y + s2], [x - s2, y + s2]]; });
       if (coll) { const extra = buildCollision(tr); for (const [k, l] of extra.grid) { const c = coll.grid.get(k); if (c) c.push(...l); else coll.grid.set(k, l); } }

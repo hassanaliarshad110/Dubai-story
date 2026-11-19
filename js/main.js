@@ -68,6 +68,7 @@ import { VideoWall } from './videowall.js?v=11190630';
 import { LyricBoards } from './lyricboard.js?v=11190630';
 import { MetroStations } from './dxbmetro.js?v=11190630';
 import { ABResidence } from './abres.js?v=11190630';
+import { Garhoud } from './garhoud.js?v=11190630';
 import { DubaiMissions } from './dxbmissions.js?v=11190630';
 import { DubaiFun, addDubaiPlaces } from './dxbfun.js?v=11190630';
 import { prepLandmarks, DubaiLandmarks } from './dxbland.js?v=11190630';
@@ -216,6 +217,7 @@ async function boot() {
   missions = new Missions(game); game.missions = missions;
   game.metro = new Metro(game, { toast, setPrompt, sfx }); game.music = music;
   if (DXB) game.abres = new ABResidence(game, scene);
+  if (DXB) game.garhoud = new Garhoud(game, scene);
   if (DXB) game.stations = new MetroStations(game, scene, world, transit, tiles);      // Dubai: a gold-shell Metro station at every stop
   else if (!game.photoOn) game.platforms = buildPlatforms(scene, world, transit);       // a platform to stand on at every CTrain station
   game.buses = new Buses(game, { toast, setPrompt, sfx });
@@ -606,6 +608,7 @@ function loop(now) {
     if (game.platforms) game.platforms.update(dt, player.x, player.y);
     if (game.stations) game.stations.update(dt, player.x, player.y, game.day);
     if (game.abres) game.abres.update(dt, player.x, player.y, game.day);
+    if (game.garhoud) game.garhoud.update(dt, player.x, player.y);
     if (game.life) game.life.update(dt, player.x, player.y);
     if (game.mp) game.mp.update(dt, player, camH);
     if (game.games && game.mode === 'free' && !game.dubai) game.games.update(dt);

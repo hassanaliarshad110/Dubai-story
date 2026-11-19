@@ -29,7 +29,7 @@ export const OMNIYAT = [
   { label: 'Vela by OMNIYAT', x: -5141, y: -5975, note: 'Dorchester Collection residences on the water.' },
 ];
 const EXTRA = [
-  { label: 'AB Residence 2, Al Warsan', x: 4940.3, y: -10435.7 },
+  { label: 'AB Residence 2, Al Warsan', x: 4896.9, y: -10474.5 },
   { label: '27C Street, Al Garhoud', x: 1137, y: -160 },
   { label: 'Karakccino', x: 1113, y: -1188 },
   { label: 'Karak House', x: -6377, y: -5871 },
@@ -40,7 +40,7 @@ const EXTRA = [
 // where each character lives, and the car that waits outside
 export const HOMES = {
   ali: { x: 1146, y: -158.5, h: 0, name: '27C Street, Al Garhoud' },
-  farah: { x: 4907.3, y: -10429.5, h: 0.3658, name: 'AB Residence 2, Warsan Fourth', car: 'tiida' },      // her black Tiida waits outside
+  farah: { x: 4896.9, y: -10474.5, h: 0.3658, name: 'AB Residence 2, Warsan Fourth', car: 'tiida', carAt: [4903.8, -10476.1, 1.9366] },      // her black Tiida waits outside
 };
 const SALIK = [['Al Garhoud Bridge', -265, -1236], ['Al Maktoum Bridge', -1894, 856], ['Business Bay Crossing', 951, -1796], ['Airport Tunnel', 3020, 610], ['Al Safa', -7700, -5560], ['Infinity Bridge', -3959, 3756]];
 // Ali's lines: [Arabic as spoken, what it means]
@@ -238,7 +238,7 @@ export class DubaiFun {
       }
     }
     // the red BMW 650i is parked at both homes: outside 27C Street and in front of AB Residence 2
-    for (const b of (this.bmws ||= [{ x: 1131.8, y: -154.4, h: 0 }, { x: 4917.5, y: -10418.4, h: 0.3658 }])) {
+    for (const b of (this.bmws ||= [{ x: 1131.8, y: -154.4, h: 0 }, { x: 4911.3, y: -10479.0, h: 1.9366 }])) {
       const d = Math.hypot(b.x - p.x, b.y - p.y);
       if (b.car && (b.car.dead || d > 520)) { if (d > 520 && !b.car.dead && Math.hypot(b.car.x - b.x, b.car.y - b.y) < 3 && p.car !== b.car) { this.scene.remove(b.car.mesh); const i = g.traffic.cars.indexOf(b.car); if (i >= 0) g.traffic.cars.splice(i, 1); } if (d > 520) b.car = null; }
       if (!b.car && d < 260 && g.traffic && g.traffic.pieces && g.traffic.pieces.length) {
@@ -249,7 +249,7 @@ export class DubaiFun {
     }
     // your own car is always waiting outside your home (Farah: the black Tiida at AB Residence 2)
     const hm = HOMES[g.story];
-    if (hm && hm.car && !this.stock && p.mode === 'foot' && (!this.ownCar || this.ownCar.dead) && g.traffic && Math.hypot(hm.x - p.x, hm.y - p.y) < 220) this.stock = { x: hm.x + 3.4, y: hm.y + 1.5, h: hm.h || 0, kind: hm.car, tell: true };
+    if (hm && hm.car && !this.stock && p.mode === 'foot' && (!this.ownCar || this.ownCar.dead) && g.traffic && Math.hypot(hm.x - p.x, hm.y - p.y) < 220) this.stock = hm.carAt ? { x: hm.carAt[0], y: hm.carAt[1], h: hm.carAt[2], kind: hm.car, tell: true } : { x: hm.x + 3.4, y: hm.y + 1.5, h: hm.h || 0, kind: hm.car, tell: true };
     if (this.stock && g.traffic && g.traffic.pieces && g.traffic.pieces.length && Math.hypot(this.stock.x - p.x, this.stock.y - p.y) < 260) {
       const s = this.stock; this.stock = null; plateOpt.dubaiOnly = true; let mesh; try { mesh = makeCar(s.kind); } finally { plateOpt.dubaiOnly = false; }
       if (s.tell) toast('🚗 Your black Tiida is parked right beside you.', 3500);

@@ -98,7 +98,7 @@ export class Garhoud {
     // the corner villa's side wall, and the lamp post on the bend
     box('cream', 0, 1108.3, 1108.6, -126, -148.4, 0, 1.8); lamp(1094.6, -131, 1, 0); tree(1107, -134, 6.5, 2.6);
     // going north: a salmon wall and parked cars on the left, the building site's white fence and scaffold on the right
-    for (let y = -146; y < -86; y += 6) box('yellow', 0xe2b53a, 1098.9 - (y + 86) * 0.031, 1099.05 - (y + 86) * 0.031, y, y + 2.4, 0.035, 0.05);
+    for (let y = -146; y < -86; y += 6) box('yellow', 0xe2b53a, 1097.22 - (y + 85) * 0.035, 1097.37 - (y + 85) * 0.035, y, y + 2.4, 0.035, 0.05);
     box('salmon', 0xd9b5a2, 1090.9, 1091.2, -92, -131, 0, 2.0); pave(redPave, 1091.3, 1094.8, -92, -131);
     const hoard = tex(64, 64, (g) => { g.fillStyle = '#e7e9ea'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#cfd3d5'; for (let i = 0; i < 8; i++) g.fillRect(i * 8, 0, 2.5, 64); g.fillStyle = '#b9bdbf'; g.fillRect(0, 0, 64, 3); }), hm = new THREE.MeshLambertMaterial({ map: hoard, side: DS }); hoard.repeat.set(26, 1);
     panel(hm, 1103.9, -107, -Math.PI / 2, 38, 2.5, 0);

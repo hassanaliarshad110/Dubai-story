@@ -327,3 +327,20 @@ body.wasted canvas { filter: grayscale(1) contrast(1.15) brightness(.55); transi
 #intro-title .title-in { padding: 0 0 calc(env(safe-area-inset-bottom) + 26px); animation: none; }
 #intro-title .logo, #intro-title .sub, #intro-title .tagline { display: none; }
 #intro-title #btn-tap { font-size: clamp(20px, 5.5vw, 30px); padding: 14px 44px; border-radius: 999px; background: #19e3c8; color: #06121a; font-weight: 900; border: 3px solid #06121a; box-shadow: 0 6px 0 #06121a, 0 0 30px rgba(25, 227, 200, .55); letter-spacing: .04em; }
+
+/* who-you-play screen: the cover art behind, a pink neon script title, and the two characters' faces */
+@font-face { font-family: 'Mr Dafoe'; src: url(../fonts/MrDafoe-Regular.ttf) format('truetype'); font-display: swap; }
+#intro-who { background: linear-gradient(180deg, rgba(20, 4, 30, .5), rgba(12, 4, 22, .96) 46%), url(../img/cover.jpg) center top / cover no-repeat; }
+#intro-who .title-in { padding: 18px 0 30px; }
+.vc-logo { font-family: 'Mr Dafoe', 'Brush Script MT', 'Segoe Script', cursive; color: #ff4fb0; line-height: .82; transform: rotate(-6deg); margin: 10px 0 26px; text-shadow: 0 0 2px #fff, 3px 3px 0 #5a0a3c, 5px 5px 0 #23041a, 0 0 22px rgba(255, 60, 170, .9), 0 0 54px rgba(255, 60, 170, .55); animation: vcglow 2.7s ease-in-out infinite; }
+.vc-logo span { display: block; font-size: clamp(64px, 19vw, 132px); } .vc-logo span:first-child { font-size: clamp(46px, 13vw, 92px); margin-right: 34%; }
+@keyframes vcglow { 50% { text-shadow: 0 0 2px #fff, 3px 3px 0 #5a0a3c, 5px 5px 0 #23041a, 0 0 34px rgba(255, 60, 170, 1), 0 0 80px rgba(255, 60, 170, .75); } }
+#intro-who .pick-h { font-size: 14px; letter-spacing: .34em; text-transform: uppercase; color: #ffd0e8; opacity: 1; margin: 6px 0 14px; }
+#intro-who .chars { display: flex; justify-content: center; gap: 16px; }
+#intro-who .char-btn { width: min(40vw, 190px); padding: 14px 8px 12px; border-radius: 20px; border: 2px solid rgba(255, 255, 255, .2); background: rgba(20, 6, 30, .6); backdrop-filter: blur(6px); transition: transform .15s; }
+#intro-who .char-btn.on { border-color: #ff4fb0; background: rgba(255, 79, 176, .18); box-shadow: 0 0 26px rgba(255, 60, 170, .55); transform: scale(1.05); }
+#intro-who .char-av { width: min(30vw, 132px); height: min(30vw, 132px); border-radius: 50%; overflow: hidden; background: linear-gradient(160deg, #ff7ac4, #6a1f8a); border: 3px solid #fff; display: block; }
+#intro-who .char-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#intro-who .char-btn b { font-size: 22px; letter-spacing: .04em; }
+#intro-who .char-blurb { min-height: 0; margin: 8px 0; }
+#intro-who .start-btns button.primary { background: linear-gradient(90deg, #ff2e93, #ff7a3d); border: 0; border-radius: 999px; font-size: 20px; padding: 16px; box-shadow: 0 6px 0 #5a0a3c, 0 0 26px rgba(255, 60, 170, .5); text-transform: uppercase; letter-spacing: .08em; }

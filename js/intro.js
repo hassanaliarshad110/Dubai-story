@@ -21,7 +21,7 @@ export function initIntro({ music, characters, onPick }) {
     const wrap = $('.chars'); wrap.innerHTML = '';
     for (const [key, c] of Object.entries(characters)) {
       const b = document.createElement('button'); b.className = 'char-btn' + (key === picked ? ' on' : ''); b.dataset.key = key;
-      b.innerHTML = `<span class="char-av" style="background:${AV[key] || ({ hassan: 'linear-gradient(#1b1410 34%, #8d5a3b 34% 66%, #2f8f5a 66%)', farah: 'linear-gradient(#4a2e1a 34%, #d9a77e 34% 66%, #7a3fa0 66%)' })[key] || '#888'}"></span><b>${c.name}</b>`;
+      b.innerHTML = `<span class="char-av"><img src="img/face-${key}.png" alt="" onerror="this.remove()"></span><b>${c.name}</b>`;
       b.onclick = () => choose(key);
       wrap.appendChild(b);
     }
@@ -45,8 +45,10 @@ export function initIntro({ music, characters, onPick }) {
     $('#btn-start').hidden = true; const pr = $('.presents'); pr.hidden = false;
     setTimeout(() => { if (!$('#intro-presents').hidden) show('#intro-title'); }, 3700);
   };
-  $('#btn-tap').onclick = () => { music.titleChorus(); show('#intro-lang'); };
+  // the game is in English only: Start goes straight to choosing who you play
+  $('#btn-tap').onclick = () => { music.titleChorus(); show('#intro-who'); if (!picked) choose(localStorageChar() || 'ali'); };
   $('#btn-lang').onclick = () => show('#intro-lang');
+  if (LANG.code !== 'en') setLang('en');
   apply();
   // skip straight to the character choice with #play (for links from the website)
   if (location.hash === '#play' || location.hash === '#menu') { show('#intro-who'); choose(localStorageChar() || 'ali'); if (location.hash === '#menu') music.titleChorus(); }

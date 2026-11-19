@@ -66,6 +66,7 @@ import { Billboards, loadBillboards, dubaiBoards } from './billboards.js?v=11190
 import { BurjShow } from './burjshow.js?v=11190630';
 import { VideoWall } from './videowall.js?v=11190630';
 import { LyricBoards } from './lyricboard.js?v=11190630';
+import { MetroStations } from './dxbmetro.js?v=11190630';
 import { DubaiMissions } from './dxbmissions.js?v=11190630';
 import { DubaiFun, addDubaiPlaces } from './dxbfun.js?v=11190630';
 import { prepLandmarks, DubaiLandmarks } from './dxbland.js?v=11190630';
@@ -213,7 +214,8 @@ async function boot() {
   transit.groundY = (x, y, hint, rail) => { if (!rail) return tiles.surfaceAt(x, y, hint ?? ground(x, y), 1.5, 1); const s = tiles.surfaceAt(x, y, 0, 1e9, 3), g0 = ground(x, y); return hint != null && s < g0 + 0.3 && hint > g0 + 1 ? Math.max(s, hint - 0.01) : s; };
   missions = new Missions(game); game.missions = missions;
   game.metro = new Metro(game, { toast, setPrompt, sfx }); game.music = music;
-  if (!game.photoOn) game.platforms = buildPlatforms(scene, world, transit);       // a platform to stand on at every CTrain station
+  if (DXB) game.stations = new MetroStations(game, scene, world, transit, tiles);      // Dubai: a gold-shell Metro station at every stop
+  else if (!game.photoOn) game.platforms = buildPlatforms(scene, world, transit);       // a platform to stand on at every CTrain station
   game.buses = new Buses(game, { toast, setPrompt, sfx });
   game.signals = new Signals(scene, traffic, { radius: mobile ? 180 : 260 }); game.billboards = new Billboards(scene, DXB ? dubaiBoards(world, (x, y) => tiles.roofAt(x, y)) : null); if (DXB) { game.burj = new BurjShow(game, scene, world); game.videowall = new VideoWall(game, camera, game.billboards.items); game.lyricboards = new LyricBoards(game, game.billboards.items); game.land = new DubaiLandmarks(game, scene); addDubaiPlaces(world); game.dxm = new DubaiMissions(game, scene, world); game.fun = new DubaiFun(game, scene, world, tiles); } if (world.addr) game.numbers = new HouseNumbers(scene, tiles, { radius: 1 });
   initHealth(game); game.sfx = sfx; traffic.onHitPlayer = (v, nx, ny) => hurt(Math.min(100, 10 + v * 4), nx, ny, 'car');
@@ -600,6 +602,7 @@ function loop(now) {
   if (game.started) {
     updateHouses(dt, player.x, player.y, (player.mode === 'heli' || (game.powers && game.powers.flying)) && player.gy - ground(player.x, player.y) > 18);
     if (game.platforms) game.platforms.update(dt, player.x, player.y);
+    if (game.stations) game.stations.update(dt, player.x, player.y, game.day);
     if (game.life) game.life.update(dt, player.x, player.y);
     if (game.mp) game.mp.update(dt, player, camH);
     if (game.games && game.mode === 'free' && !game.dubai) game.games.update(dt);

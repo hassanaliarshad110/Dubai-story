@@ -232,7 +232,7 @@ async function boot() {
 }
 $('#btn-story').disabled = true; $('#btn-free').disabled = true;
 // the intro: Calgary Insight presents -> YYC City Stories (the song from the chorus) -> language -> who you play
-game.story = (() => { try { return localStorage.getItem('yyc-char') || 'ali'; } catch (e) { return 'ali'; } })();
+game.story = (() => { try { const c = localStorage.getItem('yyc-char'); return c && CHARACTERS[c] ? c : 'ali'; } catch (e) { return 'ali'; } })();
 if (!CHARACTERS[game.story]) game.story = Object.keys(CHARACTERS)[0];
 game.look = CHARACTERS[game.story].look; game.name = CHARACTERS[game.story].name;
 const intro = initIntro({

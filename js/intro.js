@@ -21,16 +21,16 @@ export function initIntro({ music, characters, onPick }) {
     const wrap = $('.chars'); wrap.innerHTML = '';
     for (const [key, c] of Object.entries(characters)) {
       const b = document.createElement('button'); b.className = 'char-btn' + (key === picked ? ' on' : ''); b.dataset.key = key;
-      b.innerHTML = `<span class="char-av" style="background:${AV[key] || ({ hassan: 'linear-gradient(#1b1410 34%, #8d5a3b 34% 66%, #2f8f5a 66%)', farah: 'linear-gradient(#4a2e1a 34%, #d9a77e 34% 66%, #7a3fa0 66%)' })[key] || '#888'}"></span><b>${c.name}</b><small>${pick(c.role)}</small>`;
+      b.innerHTML = `<span class="char-av" style="background:${AV[key] || ({ hassan: 'linear-gradient(#1b1410 34%, #8d5a3b 34% 66%, #2f8f5a 66%)', farah: 'linear-gradient(#4a2e1a 34%, #d9a77e 34% 66%, #7a3fa0 66%)' })[key] || '#888'}"></span><b>${c.name}</b>`;
       b.onclick = () => choose(key);
       wrap.appendChild(b);
     }
-    if (picked) $('.char-blurb').textContent = pick(characters[picked].blurb);
+    $('.char-blurb').textContent = '';
   }
   function choose(key) {
     picked = key; onPick(key);
     document.querySelectorAll('.char-btn').forEach(x => x.classList.toggle('on', x.dataset.key === key));
-    $('.char-blurb').textContent = pick(characters[key].blurb);
+    $('.char-blurb').textContent = '';
   }
   // language buttons, each in its own language
   const langs = $('.langs');

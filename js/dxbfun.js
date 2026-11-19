@@ -39,7 +39,7 @@ const EXTRA = [
 ];
 // where each character lives, and the car that waits outside
 export const HOMES = {
-  hassan: { x: 1146, y: -158.5, h: 0, name: '27C Street, Al Garhoud' },
+  ali: { x: 1146, y: -158.5, h: 0, name: '27C Street, Al Garhoud' },
   farah: { x: 4874.5, y: -10490.2, h: 0, name: 'AB Residence 2, Warsan Fourth', car: 'tiida' },      // her black Tiida waits outside
 };
 const SALIK = [['Al Garhoud Bridge', -265, -1236], ['Al Maktoum Bridge', -1894, 856], ['Business Bay Crossing', 951, -1796], ['Airport Tunnel', 3020, 610], ['Al Safa', -7700, -5560], ['Infinity Bridge', -3959, 3756]];

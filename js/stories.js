@@ -86,9 +86,7 @@ const NAT_END = `<p>You stood up to bullies safely, helped a new student feel we
 const T = (en, fr, pa, ur, tl, ar) => ({ en, fr, pa, ur, tl, ar });
 
 // ---------------------------------------------------------------- the characters
-export const CHARACTERS = {      // Dubai City Stories: Hassan, Farah and Ali, each with their own missions (dxbmissions.js)
-  hassan: { look: 'jean', name: 'Hassan', role: T('The fixer', 'Le débrouillard', 'ਕੰਮ ਕੱਢਣ ਵਾਲਾ', 'کام نکالنے والا', 'Ang tagaayos', 'حلّال المشاكل'),
-    blurb: T('Hassan knows every street from Garhoud to Downtown. People call him when something has to get across the city, fast.', 'Hassan connaît chaque rue de Garhoud à Downtown. On l\'appelle quand il faut traverser la ville, vite.', 'ਹਸਨ ਗਰਹੂਦ ਤੋਂ ਡਾਊਨਟਾਊਨ ਤੱਕ ਹਰ ਗਲੀ ਜਾਣਦਾ ਹੈ।', 'حسن گڑھود سے ڈاؤن ٹاؤن تک ہر گلی جانتا ہے۔ جب کوئی چیز شہر کے پار جلدی پہنچانی ہو تو لوگ اسی کو بلاتے ہیں۔', 'Kilala ni Hassan ang bawat kalye mula Garhoud hanggang Downtown.', 'حسن يعرف كل شارع من القرهود إلى وسط المدينة.') },
+export const CHARACTERS = {      // Dubai City Stories: Farah and Ali, each with their own missions (dxbmissions.js)
   farah: { look: 'natalia', name: 'Farah', role: T('The driver', 'La pilote', 'ਡਰਾਈਵਰ', 'ڈرائیور', 'Ang drayber', 'السائقة'),
     blurb: T('Farah drives better than anyone in Deira, and she has the camera to prove it.', 'Farah conduit mieux que quiconque à Deira, et elle a les images pour le prouver.', 'ਫ਼ਰਾਹ ਦੇਰਾ ਵਿੱਚ ਸਭ ਤੋਂ ਵਧੀਆ ਗੱਡੀ ਚਲਾਉਂਦੀ ਹੈ।', 'فرح دیرہ میں سب سے اچھی گاڑی چلاتی ہے، اور ثبوت اس کے کیمرے میں ہے۔', 'Si Farah ang pinakamahusay magmaneho sa Deira.', 'فرح تقود أفضل من أي أحد في ديرة.') },
   ali: { look: 'kandura', name: 'Ali', role: T('New to Dubai', 'Nouveau à Dubaï', 'ਦੁਬਈ ਵਿੱਚ ਨਵਾਂ', 'دبئی میں نئے', 'Bagong dating sa Dubai', 'وافد جديد إلى دبي'),

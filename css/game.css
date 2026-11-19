@@ -319,3 +319,11 @@ body.wasted canvas { filter: grayscale(1) contrast(1.15) brightness(.55); transi
 #hosp small { display: block; margin-top: 8px; font: 700 clamp(13px, 3.4vw, 20px) system-ui, sans-serif; color: #b9ffd9; text-shadow: 0 2px 6px #000; }
 #hosp[hidden] { display: none; }
 @keyframes hospIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+/* Dubai City Stories: the cover is the start screen */
+#intro-title { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; background: #0b0d14 url(../img/cover.jpg) center / contain no-repeat; }
+#intro-title::before { content: ''; position: absolute; inset: 0; background: url(../img/cover.jpg) center / cover no-repeat; filter: blur(22px) brightness(.45); z-index: -1; }
+#intro-title[hidden] { display: none; }
+#intro-title .title-in { padding: 0 0 calc(env(safe-area-inset-bottom) + 26px); animation: none; }
+#intro-title .logo, #intro-title .sub, #intro-title .tagline { display: none; }
+#intro-title #btn-tap { font-size: clamp(20px, 5.5vw, 30px); padding: 14px 44px; border-radius: 999px; background: #19e3c8; color: #06121a; font-weight: 900; border: 3px solid #06121a; box-shadow: 0 6px 0 #06121a, 0 0 30px rgba(25, 227, 200, .55); letter-spacing: .04em; }

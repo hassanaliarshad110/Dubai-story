@@ -3,10 +3,10 @@
 // Calgary house of the same kind (bungalow, two-storey, split-level, infill, townhouse row), fitted to
 // its real footprint and height and turned to face its street. Farther away the plain shapes stay.
 import * as THREE from 'three';
-import { loader, warm } from './gltf.js?v=11112231';
-import { HOUSES, B3D_SKIP } from './tiles.js?v=11112231';
-import { SWAP } from './materials.js?v=11112231';
-import { ground } from './terrain.js?v=11112231';
+import { loader, warm } from './gltf.js?v=11190630';
+import { HOUSES, B3D_SKIP } from './tiles.js?v=11190630';
+import { SWAP } from './materials.js?v=11190630';
+import { ground } from './terrain.js?v=11190630';
 
 
 const KINDS = ['2storey', 'bungalow', 'infill', 'split', 'townrow', 'porch'];

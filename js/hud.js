@@ -1,9 +1,9 @@
 // On-screen interface: minimap, full map, dialogue, info cards, quizzes, toasts, objective.
-import { L, AREA_COL } from './tiles.js?v=11112231';
-import { tx, tr, rtl } from './i18n.js?v=11112231';
-import { speak, stopVoice } from './voice.js?v=11112231';
-import { communityAt } from './world.js?v=11112231';
-import { drawFieldsOnMap, fieldIcons } from './fields.js?v=11112231';
+import { L, AREA_COL } from './tiles.js?v=11190630';
+import { tx, tr, rtl } from './i18n.js?v=11190630';
+import { speak, stopVoice } from './voice.js?v=11190630';
+import { communityAt } from './world.js?v=11190630';
+import { drawFieldsOnMap, fieldIcons } from './fields.js?v=11190630';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

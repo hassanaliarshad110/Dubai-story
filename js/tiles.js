@@ -1,8 +1,8 @@
 // Streams 500 m map tiles around the player and turns them into 3D meshes plus collision data.
 import * as THREE from 'three';
-import { MAT, nearFade } from './materials.js?v=11112231';
-import { loader } from './gltf.js?v=11112231';
-import { TER, ground, gl } from './terrain.js?v=11112231';
+import { MAT, nearFade } from './materials.js?v=11190630';
+import { loader } from './gltf.js?v=11190630';
+import { TER, ground, gl } from './terrain.js?v=11190630';
 
 // Dubai City Stories: the look of a Gulf city (flat roofs, sand, stone and glass); set from world.cityId at boot
 export const STYLE = { dubai: false };

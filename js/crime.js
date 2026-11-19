@@ -3,17 +3,17 @@
 // Every crime adds heat: shooting where people can see, hurting or killing someone, running people over, stealing a car,
 // blowing things up. Heat is stars (1 to 5); the police send one chase car per star, arrest you at one star and shoot from two.
 import * as THREE from 'three';
-import { toast } from './hud.js?v=11112231';
-import { hurt } from './health.js?v=11112231';
-import { makeCar } from './actors.js?v=11112231';
-import { ground } from './terrain.js?v=11112231';
-import { standY } from './tiles.js?v=11112231';
-import { dirOf, rotY, TYRE_Y } from './player.js?v=11112231';
-import { spinWheels } from './vehicles.js?v=11112231';
-import { lightsOn } from './carlights.js?v=11112231';
-import { sfx } from './sound.js?v=11112231';
-import { makeHeli, syncHeli } from './heli.js?v=11112231';
-import { Character } from './rig.js?v=11112231';
+import { toast } from './hud.js?v=11190630';
+import { hurt } from './health.js?v=11190630';
+import { makeCar } from './actors.js?v=11190630';
+import { ground } from './terrain.js?v=11190630';
+import { standY } from './tiles.js?v=11190630';
+import { dirOf, rotY, TYRE_Y } from './player.js?v=11190630';
+import { spinWheels } from './vehicles.js?v=11190630';
+import { lightsOn } from './carlights.js?v=11190630';
+import { sfx } from './sound.js?v=11190630';
+import { makeHeli, syncHeli } from './heli.js?v=11190630';
+import { Character } from './rig.js?v=11190630';
 
 export const SVG = d => `<svg viewBox="0 0 64 40" width="40" height="25" style="vertical-align:middle"><path fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round" d="${d}"/></svg>`;
 const ICON = {

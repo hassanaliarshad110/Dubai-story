@@ -2,8 +2,8 @@
 // The words are drawn live in pink and follow the song: the radio when it is playing the title song,
 // otherwise the screen plays the song itself, louder as you walk up to it.
 import * as THREE from 'three';
-import { music } from './music.js?v=11112231';
-import { isMuted } from './sound.js?v=11112231';
+import { music } from './music.js?v=11190630';
+import { isMuted } from './sound.js?v=11190630';
 
 const SRC = 'audio/radio/dubai-city-stories.mp3', LEN = 103.7, BEAT = 60 / 89, ANCHOR = 37.2;
 // [start, text, kind]  kind: v = verse, h = hook, t = title card

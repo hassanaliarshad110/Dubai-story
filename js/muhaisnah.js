@@ -9,6 +9,10 @@ import { ground } from './terrain.js?v=11190752';
 import { makeCar } from './actors.js?v=11190752';
 import { plateOpt } from './cars3d.js?v=11190752';
 import { TYRE_Y, rotY } from './player.js?v=11190752';
+import { HIDE_BLD } from './tiles.js?v=11190752';
+import { BLOCKS } from './stagekit.js?v=11190752';
+
+HIDE_BLD.push([7118.5, 3992.2, 6, 0]);   // the grocery strip is one storey, built here by hand
 
 const C = { x: 6850, y: 4120 }, DS = THREE.DoubleSide;
 function tex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; }
@@ -20,11 +24,11 @@ function facade(st) {
     g.fillStyle = base; g.fillRect(0, 0, w, h); g.fillStyle = dark; g.fillRect(0, Y(1.1), w, Y(0) - Y(1.1));
     const rect = (c, x, y0, x1, y1) => { g.fillStyle = c; g.fillRect(X(x), Y(y1), X(x1 - x), Y(y0) - Y(y1)); };
     if (st === 'old') {
-      for (let f = 0; f < 2; f++) { const z = 1.2 + f * 3.0;
-        rect('#3a4046', 0.7, z + 0.9, 1.9, z + 2.2); rect('#8d9aa3', 0.6, z + 0.25, 2.0, z + 0.85); g.fillStyle = '#6f7a82'; for (let i = 0; i < 6; i++) g.fillRect(X(0.6) + i * 7.5, Y(z + 0.85), 2, Y(z + 0.25) - Y(z + 0.85));
-        rect('#2c3238', 2.9, z + 1.0, 5.4, z + 2.5); g.fillStyle = lite; g.beginPath(); g.ellipse(X(4.15), Y(z + 0.55), X(1.45), 20, 0, 0, 7); g.fill(); rect(lite, 2.7, z + 0.5, 5.6, z + 1.05);
-        rect('#3a4046', 6.2, z + 0.9, 7.3, z + 2.2); rect('#8d9aa3', 6.1, z + 0.25, 7.4, z + 0.85); }
-      g.fillStyle = '#8d9aa3'; for (const cx of [1.4, 6.6]) { g.beginPath(); g.moveTo(X(cx - 1.2), 0); g.lineTo(X(cx + 1.2), 0); g.lineTo(X(cx + 0.7), 26); g.lineTo(X(cx), 40); g.lineTo(X(cx - 0.7), 26); g.fill(); }
+      g.fillStyle = '#c4a57e'; g.fillRect(0, 0, w, h); g.fillStyle = '#b3946d'; g.fillRect(0, Y(0.5), w, Y(0) - Y(0.5));
+      for (let f = 0; f < 3; f++) { const z = 0.9 + f * 2.25;
+        for (const x of [0.8, 3.2, 5.6]) { rect('#2f3438', x, z, x + 1.3, z + 1.25); rect('#e9e4d6', x - 0.06, z - 0.08, x + 1.36, z); rect('#55616a', x + 0.62, z, x + 0.68, z + 1.25); }
+        rect('#d8d5cc', 2.35, z + 0.15, 2.95, z + 0.6); rect('#9aa0a4', 2.4, z + 0.2, 2.9, z + 0.55); }
+      g.fillStyle = '#d2b48c'; g.fillRect(0, 0, w, 10); g.fillStyle = '#a98a63'; g.beginPath(); g.moveTo(X(3.2), 0); g.lineTo(X(4), 22); g.lineTo(X(4.8), 0); g.fill();
       return;
     }
     const glass = st === 'beige' ? '#6f9fb4' : '#8fcdb6';
@@ -54,7 +58,7 @@ export class Muhaisnah {
     D.b.forEach((b, bi) => {
       const P = b.p.slice(); if (P.length > 2 && P[0][0] === P[P.length - 1][0] && P[0][1] === P[P.length - 1][1]) P.pop();
       let A = 0, cx = 0, cy = 0; for (let i = 0; i < P.length; i++) { const p = P[i], q = P[(i + 1) % P.length]; A += p[0] * q[1] - q[0] * p[1]; cx += p[0]; cy += p[1]; } cx /= P.length; cy /= P.length;
-      const s = A > 0 ? 1 : -1, g0 = ground(cx, cy), st = b.h >= 12 ? (bi % 4 === 1 ? 'white' : 'beige') : 'old', [pos, uv, idx] = W[st];
+      const s = A > 0 ? 1 : -1, g0 = ground(cx, cy), st = b.h >= 12 ? (/^A-/.test(b.n || '') ? 'white' : 'beige') : 'old', [pos, uv, idx] = W[st]; if (bi === 60) return;
       for (let i = 0; i < P.length; i++) {
         const p = P[i], q = P[(i + 1) % P.length], dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy); if (l < 1.2) continue;
         const nx = dy / l * s * 0.09, ny = -dx / l * s * 0.09, n = Math.max(1, Math.round(l / 8)), i0 = pos.length / 3;
@@ -65,13 +69,18 @@ export class Muhaisnah {
     for (const st in W) { const [pos, uv, idx] = W[st]; if (!pos.length) continue; const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: facade(st), side: DS })); m.receiveShadow = true; grp.add(m); }
     // ---- the mosques: dome on a drum, and a minaret with its balcony
     D.m.forEach((m, k) => {
-      const big = m.a > 2000, r = big ? 9 : m.a > 700 ? 5.5 : 4.2, gy = ground(m.x, m.y), col = k === 2 ? 0xb8805a : 0xd9bf86, stone = 0xe6d5b0;
+      const big = m.a > 2000, r = big ? 9 : k === 2 ? 6.2 : 5.5, gy = ground(m.x, m.y), col = 0xd9bf86, stone = 0xe3cfa6;
       cyl('stone', stone, m.x, m.y, r * 1.02, m.h, m.h + r * 0.45, r * 1.02, 20);
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ map: tex(128, 64, (g) => { g.fillStyle = k === 2 ? '#b8805a' : '#d9bf86'; g.fillRect(0, 0, 128, 64); g.strokeStyle = k === 2 ? '#9a6644' : '#bfa368'; g.lineWidth = 2; if (k === 2) for (let i = 0; i < 16; i++) { g.beginPath(); g.moveTo(i * 8 + 4, 0); g.lineTo(i * 8 + 4, 64); g.stroke(); } else for (let y = 0; y < 5; y++) for (let x = 0; x < 9; x++) { g.beginPath(); g.arc(x * 16 + (y % 2 ? 8 : 0), y * 16, 9, 0, Math.PI); g.stroke(); } }) }));
-      dome.material.map.repeat.set(k === 2 ? 2 : 3, 1); dome.scale.y = 1.18; dome.position.set(m.x, gy + m.h + r * 0.45, -m.y); grp.add(dome);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ map: tex(128, 64, (g) => { g.fillStyle = '#d9bf86'; g.fillRect(0, 0, 128, 64); g.strokeStyle = '#bfa368'; g.lineWidth = 2; for (let y = 0; y < 5; y++) for (let x = 0; x < 9; x++) { g.beginPath(); g.arc(x * 16 + (y % 2 ? 8 : 0), y * 16, 9, 0, Math.PI); g.stroke(); } }) }));
+      dome.material.map.repeat.set(3, 1); dome.scale.y = 1.18; dome.position.set(m.x, gy + m.h + r * 0.45, -m.y); grp.add(dome);
       cyl('gold', 0xc9a44a, m.x, m.y, 0.12, m.h + r * 1.6, m.h + r * 1.6 + 2.2); { mat('gold', 0xc9a44a); const t = new THREE.TorusGeometry(0.55, 0.09, 6, 14); t.translate(m.x, gy + m.h + r * 1.6 + 2.6, -m.y); bins.gold.push(t); }
       // the minaret stands at the corner of the mosque nearest the road
-      const c0 = m.p[0], mx = c0[0] + (m.x - c0[0]) * 0.12, my = c0[1] + (m.y - c0[1]) * 0.12, H = big ? 34 : 24;
+      const c0 = m.p[0], mx = c0[0] + (m.x - c0[0]) * 0.12, my = c0[1] + (m.y - c0[1]) * 0.12, H = big ? 34 : k === 2 ? 36 : 24;
+      if (k === 2) { const P = m.p, wt = tex(256, 320, (g) => { g.fillStyle = '#e3cfa6'; g.fillRect(0, 0, 256, 320); g.fillStyle = '#a8443a'; g.fillRect(0, 296, 256, 24); g.fillStyle = '#d3bd90'; g.fillRect(0, 0, 256, 14); for (const cx of [64, 192]) { g.fillStyle = '#cdb689'; g.beginPath(); g.moveTo(cx - 44, 296); g.lineTo(cx - 44, 150); g.quadraticCurveTo(cx - 44, 70, cx, 50); g.quadraticCurveTo(cx + 44, 70, cx + 44, 150); g.lineTo(cx + 44, 296); g.fill(); g.fillStyle = '#5b4a36'; g.beginPath(); g.moveTo(cx - 26, 296); g.lineTo(cx - 26, 170); g.quadraticCurveTo(cx - 26, 110, cx, 96); g.quadraticCurveTo(cx + 26, 110, cx + 26, 170); g.lineTo(cx + 26, 296); g.fill(); } }), pos = [], uv = [], idx = [];
+        let A = 0; for (let i = 0; i < P.length; i++) { const p = P[i], q = P[(i + 1) % P.length]; A += p[0] * q[1] - q[0] * p[1]; } const sg = A > 0 ? 1 : -1;
+        for (let i = 0; i < P.length; i++) { const p = P[i], q = P[(i + 1) % P.length], dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy); if (l < 1) continue; const ox = dy / l * sg * 0.1, oy = -dx / l * sg * 0.1, n = Math.max(1, Math.round(l / 9)), i0 = pos.length / 3; pos.push(p[0] + ox, gy - 0.3, -(p[1] + oy), q[0] + ox, gy - 0.3, -(q[1] + oy), q[0] + ox, gy + m.h + 0.05, -(q[1] + oy), p[0] + ox, gy + m.h + 0.05, -(p[1] + oy)); uv.push(0, 0, n, 0, n, 1, 0, 1); idx.push(i0, i0 + 1, i0 + 2, i0, i0 + 2, i0 + 3); }
+        const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); bg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); bg.setIndex(idx); bg.computeVertexNormals(); grp.add(new THREE.Mesh(bg, new THREE.MeshLambertMaterial({ map: wt, side: DS })));
+        const sx = m.x - 9, sy = m.y + 4; cyl('stone', stone, sx, sy, 3.1, m.h, m.h + 1.2, 3.1, 16); const d2 = new THREE.Mesh(new THREE.SphereGeometry(3, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), dome.material); d2.scale.y = 1.15; d2.position.set(sx, gy + m.h + 1.2, -sy); grp.add(d2); }
       box('stone', stone, mx, my, 2.6, 2.6, 0, H * 0.45); cyl('stone', stone, mx, my, 1.15, H * 0.45, H * 0.72, 1.05, 8); cyl('stone', stone, mx, my, 1.75, H * 0.72, H * 0.76, 1.75, 8); cyl('stone', stone, mx, my, 0.85, H * 0.76, H * 0.92, 0.8, 8);
       cyl('stone', stone, mx, my, 1.25, H * 0.44, H * 0.47, 1.6, 8); cyl('domeS', col, mx, my, 0.95, H * 0.92, H, 0.1, 10); cyl('gold', 0xc9a44a, mx, my, 0.07, H, H + 1.6);
       for (const [px, py] of [[m.x + r + 4, m.y - r], [m.x - r - 3, m.y + r + 2]]) { cyl('palmt', 0x8a7458, px, py, 0.25, 0, 6.5, 0.2); for (let i = 0; i < 8; i++) { const g = new THREE.BoxGeometry(0.5, 0.08, 3.2); g.translate(0, 0, 1.6); g.rotateX(0.5); g.rotateY(i / 8 * 6.283); g.translate(px, ground(px, py) + 6.5, -py); mat('palml', 0x3f8a3a); (bins.palml ||= []).push(g); } }
@@ -91,19 +100,27 @@ export class Muhaisnah {
         acc += l;
       }
     }
-    // ---- the corner shops beside Masjid Abdul Rehman: the red name boards, an awning and tables outside the restaurant
-    const a = [7107.3, 4003.8], b = [7133.7, 3986.6], L = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / L, uy = (b[1] - a[1]) / L, nx = 0.546, ny = 0.838, face = Math.atan2(nx, -ny);
-    const board = (t, w, lines, bg, fg) => { const x = a[0] + ux * t + nx * 0.16, y = a[1] + uy * t + ny * 0.16, p = new THREE.Mesh(new THREE.PlaneGeometry(w, 1.5), new THREE.MeshBasicMaterial({ map: plate(lines, bg, fg), toneMapped: false })); p.position.set(x, ground(x, y) + 3.95, -y); p.rotation.y = face; grp.add(p); };
-    board(5.3, 9.6, ['MOHAMMED AL HELO RESTAURANT', 'مطعم محمد الحلو'], '#d6252c', '#ffffff'); board(15.8, 10.4, ['ABDULLA KUTAIT GROCERY', 'بقالة عبدالله كتيت'], '#d6252c', '#ffe45c'); board(26.3, 9.6, ['ABDULLA KUTAIT GROCERY (BR.)', 'بقالة عبدالله كتيت'], '#f2c21a', '#b3131b');
-    { const x = b[0] + ux * 0.18 - nx * 3.6, y = b[1] + uy * 0.18 - ny * 3.6, p = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.4), new THREE.MeshBasicMaterial({ map: plate(['GENTS SALOON  ·  صالون رجالي'], '#d6252c', '#ffffff'), toneMapped: false })); p.position.set(x, ground(x, y) + 3.95, -y); p.rotation.y = face - Math.PI / 2; grp.add(p); }
-    { const x = a[0] + ux * 5.3 + nx * 1.5, y = a[1] + uy * 5.3 + ny * 1.5, aw = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 2.9), new THREE.MeshLambertMaterial({ color: 0xd8473f, side: DS })); aw.rotation.order = 'YXZ'; aw.rotation.y = face; aw.rotation.x = -Math.PI / 2 + 0.3; aw.position.set(x, ground(x, y) + 2.75, -y); grp.add(aw);
-      for (const t of [2.5, 5.3, 8]) { const tx = a[0] + ux * t + nx * 3.6, ty = a[1] + uy * t + ny * 3.6; box('tbl', 0x3a3a3a, tx, ty, 1.5, 0.8, 0.7, 0.76, -Math.atan2(uy, ux)); cyl('pole', 0, tx, ty, 0.04, 0, 0.7); } }
+    // ---- the shop strip beside the mosque: one storey, red name boards along the top, a flat canopy over the pavement
+    const a = [7107.3, 4003.8], b = [7133.7, 3986.6], L = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / L, uy = (b[1] - a[1]) / L, nx = 0.546, ny = 0.838, cx = 7118.5, cy = 3992.2, ang = Math.atan2(uy, ux);
+    box('shopw', 0xefe9da, cx, cy, L, 7.2, 0, 4.6, ang); box('shoproof', 0xd9d3c4, cx, cy, L + 0.4, 7.6, 4.6, 4.8, ang);
+    BLOCKS.push({ x: cx, y: cy, fx: ux, fy: uy, hl: L / 2, hw: 3.6, top: 5, R: L / 2 + 4 });
+    const front = tex(512, 128, (g) => { g.fillStyle = '#efe9da'; g.fillRect(0, 0, 512, 128); for (let i = 0; i < 4; i++) { g.fillStyle = '#27323a'; g.fillRect(i * 128 + 10, 14, 108, 110); g.fillStyle = '#c9342c'; g.fillRect(i * 128 + 10, 14, 108, 10); g.fillStyle = 'rgba(255,255,255,.75)'; for (let k = 0; k < 6; k++) g.fillRect(i * 128 + 16 + k * 17, 40 + (k % 3) * 22, 12, 16); g.fillStyle = '#e8c93a'; g.fillRect(i * 128 + 56, 30, 4, 94); } });
+    const names = [[['MOHAMMED AL HELO RESTAURANT', 'مطعم محمد الحلو'], '#d6252c', '#ffffff'], [['ABDULLA KUTAIT GROCERY', 'بقالة عبدالله كتيت'], '#d6252c', '#ffe45c'], [['GENTS SALOON', 'صالون رجالي'], '#d6252c', '#ffffff']];
+    for (const sd of [1, -1]) {
+      const face = Math.atan2(sd * nx, -sd * ny), fx = cx + sd * nx * 3.66, fy = cy + sd * ny * 3.66, gy = ground(fx, fy);
+      const gl = new THREE.Mesh(new THREE.PlaneGeometry(L - 1, 3.1), new THREE.MeshBasicMaterial({ map: front, toneMapped: false })); gl.position.set(fx, gy + 1.6, -fy); gl.rotation.y = face; grp.add(gl);
+      names.forEach((nm, i) => { const t = (i - 1) * sd * (L / 3), x = fx + ux * t + sd * nx * 0.05, y = fy + uy * t + sd * ny * 0.05, pl = new THREE.Mesh(new THREE.PlaneGeometry(L / 3 - 0.4, 1.35), new THREE.MeshBasicMaterial({ map: plate(nm[0], nm[1], nm[2]), toneMapped: false })); pl.position.set(x, gy + 3.85, -y); pl.rotation.y = face; grp.add(pl); });
+      box('shoproof', 0, cx + sd * nx * 5.0, cy + sd * ny * 5.0, L, 2.7, 3.05, 3.17, ang);
+      for (const t of [-L / 2 + 0.5, -L / 6, L / 6, L / 2 - 0.5]) cyl('pole', 0x9aa0a4, cx + ux * t + sd * nx * 6.2, cy + uy * t + sd * ny * 6.2, 0.06, 0, 3.05);
+    }
     for (const k in bins) { const m = new THREE.Mesh(mergeGeometries(bins[k]), M[k]); m.castShadow = true; m.receiveShadow = true; grp.add(m); for (const g of bins[k]) g.dispose(); }
     this.scene.add(grp);
   }
   // parked cars along the kerbs, as in the photographs (any of them can be taken)
   park() {
     const g = this.g, kinds = ['sentra', 'tiida', 'yaris', 'lexus', 'patrol', 'sentra', 'landcruiser', 'tiida', 'yaris', 'sentra', 'sorento', 'lexus', 'tiida', 'patrol']; this.cars = []; let k = 0;
+    const put = (kind, x, y, h) => { plateOpt.dubaiOnly = true; let mesh; try { mesh = makeCar(kind); } finally { plateOpt.dubaiOnly = false; } const gy = ground(x, y), car = { mesh, parked: true, x, y, h, gy, v: 0, s: 0, dir: 1, piece: { tile: null }, mission: true, hp: 200, x0: x, y0: y }; mesh.position.set(x, gy + TYRE_Y, -y); mesh.rotation.y = rotY(h); this.scene.add(mesh); g.traffic.cars.push(car); this.cars.push(car); };
+    { const ux = 0.838, uy = -0.546, nx = 0.546, ny = 0.838, h0 = Math.atan2(nx, ny); ['yaris', 'sentra', 'tiida', 'lexus', 'sentra'].forEach((kd, i) => put(kd, 7118.5 + ux * (i - 2) * 3.1 - nx * 11.5, 3992.2 + uy * (i - 2) * 3.1 - ny * 11.5, h0)); ['tiida', 'yaris', 'patrol', 'sentra'].forEach((kd, i) => put(kd, 7050 + i * 3.2, 3948 - i * 0.6, 0.2)); }
     for (let ri = 0; ri < this.data.r.length && k < kinds.length; ri += 4) {
       const R = this.data.r[ri], i = Math.floor(R.length / 2), a = R[i - 1], b = R[i], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ux = (b[0] - a[0]) / l, uy = (b[1] - a[1]) / l, x = (a[0] + b[0]) / 2 + uy * 4.9, y = (a[1] + b[1]) / 2 - ux * 4.9, h = Math.atan2(ux, uy);
       if (g.tiles && g.tiles.collide && g.tiles.collide(x, y, 1.2).hit) continue;

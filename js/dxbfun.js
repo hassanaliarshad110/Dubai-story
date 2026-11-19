@@ -217,15 +217,15 @@ export class DubaiFun {
         grp.scale.set((HOME.x1 - HOME.x0 + 0.7) / s.x, HOME.h / s.y, (HOME.y1 - HOME.y0 + 0.7) / s.z);
         grp.position.set(hx, ground(hx, hy) - 0.05, -hy); this.scene.add(grp); this.home = grp;
         // the gate in the front wall: sand-coloured boards in a dark brown frame, two leaves, cream posts
-        const c = document.createElement('canvas'); c.width = 512; c.height = 256; const x = c.getContext('2d');
+        const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256; const x = cv.getContext('2d');
         x.fillStyle = '#3b2a1c'; x.fillRect(0, 0, 512, 256); x.fillStyle = '#d2bd8a'; for (let i = 0; i < 2; i++) for (let s = 0; s < 14; s++) x.fillRect(14 + i * 250 + s * 17, 16, 13, 224);
         x.fillStyle = '#3b2a1c'; x.fillRect(250, 0, 12, 256); x.fillStyle = '#1c1c1c'; x.fillRect(236, 120, 8, 26); x.fillRect(268, 120, 8, 26);
-        const gt = new THREE.CanvasTexture(c); gt.colorSpace = THREE.SRGBColorSpace; gt.anisotropy = 4;
+        const gt = new THREE.CanvasTexture(cv); gt.colorSpace = THREE.SRGBColorSpace; gt.anisotropy = 4;
         const gate = new THREE.Group(), gy0 = ground(1145, -151.7);
         const leaf = new THREE.Mesh(new THREE.BoxGeometry(4.4, 1.95, 0.1), [0, 0, 0, 0, 0, 0].map((_, i) => i >= 4 ? new THREE.MeshLambertMaterial({ map: gt }) : new THREE.MeshLambertMaterial({ color: 0x3b2a1c }))); leaf.position.y = 1.0; gate.add(leaf);
         for (const sx of [-2.45, 2.45]) { const post = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.3, 0.5), new THREE.MeshLambertMaterial({ color: 0xe9dfc6 })); post.position.set(sx, 1.15, 0); gate.add(post); const cap = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.1, 0.62), new THREE.MeshLambertMaterial({ color: 0xffffff })); cap.position.set(sx, 2.35, 0); gate.add(cap); }
         gate.position.set(1144.6, gy0, 151.75); this.scene.add(gate);
-      }).catch(() => { this.home = 'none'; });
+      }).catch(e => { console.warn('home', e); this.home = this.home === 'loading' ? 'none' : this.home; });
     }
     if (!this.homeCars && hd < 260 && g.traffic && g.traffic.pieces && g.traffic.pieces.length) {
       this.homeCars = true;

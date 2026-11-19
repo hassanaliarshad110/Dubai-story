@@ -20,7 +20,7 @@ function tex(w, h, draw) { const c = document.createElement('canvas'); c.width =
 function facade(st) {
   const H = st === 'old' ? 7.5 : 13, px = 32;
   return tex(256, Math.round(H * px), (g, w, h) => {
-    const X = m => m * px, Y = m => h - m * px, base = st === 'beige' ? '#e2d0b1' : st === 'white' ? '#f0eee8' : '#b9a084', lite = st === 'beige' ? '#ecdfc6' : st === 'white' ? '#fbfaf6' : '#c9b196', dark = st === 'beige' ? '#cdb893' : st === 'white' ? '#d9d6ce' : '#a38a6f';
+    const X = m => m * px, Y = m => h - m * px, base = st === 'beige' ? '#e9e3d3' : st === 'white' ? '#f0eee8' : '#b9a084', lite = st === 'beige' ? '#f5f1e6' : st === 'white' ? '#fbfaf6' : '#c9b196', dark = st === 'beige' ? '#d8d1bf' : st === 'white' ? '#d9d6ce' : '#a38a6f';
     g.fillStyle = base; g.fillRect(0, 0, w, h); g.fillStyle = dark; g.fillRect(0, Y(1.1), w, Y(0) - Y(1.1));
     const rect = (c, x, y0, x1, y1) => { g.fillStyle = c; g.fillRect(X(x), Y(y1), X(x1 - x), Y(y0) - Y(y1)); };
     if (st === 'old') {
@@ -31,7 +31,7 @@ function facade(st) {
       g.fillStyle = '#d2b48c'; g.fillRect(0, 0, w, 10); g.fillStyle = '#a98a63'; g.beginPath(); g.moveTo(X(3.2), 0); g.lineTo(X(4), 22); g.lineTo(X(4.8), 0); g.fill();
       return;
     }
-    const glass = st === 'beige' ? '#6f9fb4' : '#8fcdb6';
+    const glass = st === 'beige' ? '#5f9fd0' : '#8fcdb6';
     rect('#f4f3ee', 0.5, 1.1, 2.4, 3.0); g.fillStyle = '#cfcdc6'; for (let i = 0; i < 14; i++) g.fillRect(X(0.5), Y(3.0) + i * 4.3, X(1.9), 1.5);      // louvred store doors
     rect('#2a3138', 3.2, 1.2, 5.4, 3.0); rect('#4a5a66', 6.1, 1.6, 7.4, 2.8);
     for (let f = 0; f < 3; f++) { const z = 3.5 + f * 3.1;
@@ -55,8 +55,8 @@ export class Muhaisnah {
     const cyl = (k, col, x, y, r, z0, z1, r2, seg = 8) => { mat(k, col); const g = new THREE.CylinderGeometry(r2 ?? r, r, z1 - z0, seg); g.translate(x, ground(x, y) + (z0 + z1) / 2, -y); (bins[k] ||= []).push(g); };
     // ---- the fronts: a skin over every wall of every block, one mesh per style
     const W = { beige: [[], [], []], white: [[], [], []], old: [[], [], []] };
-    const row = [], caps = []; for (let i = 0; i < EDGES.length - 1; i++) { if (EDGES[i] === 38) continue; const a = EDGES[i], b = EDGES[i + 1], o = 9 + (i % 2) * 1.6, q = (s, t) => [P0[0] + U[0] * s + Wd[0] * t, P0[1] + U[1] * s + Wd[1] * t]; row.push({ p: [q(a, o), q(b, o), q(b, o + 16), q(a, o + 16)], h: 13, st: 'beige', cap: 1 }); }
-    BLOCKS.push({ x: P0[0] + U[0] * -40 + Wd[0] * 17.8, y: P0[1] + U[1] * -40 + Wd[1] * 17.8, fx: U[0], fy: U[1], hl: 78, hw: 8.8, top: 14, R: 80 }, { x: P0[0] + U[0] * 74 + Wd[0] * 17.8, y: P0[1] + U[1] * 74 + Wd[1] * 17.8, fx: U[0], fy: U[1], hl: 24, hw: 8.8, top: 14, R: 27 });
+    const row = [], caps = []; for (let i = 0; i < EDGES.length - 1; i++) { if (EDGES[i] === 38) continue; const a = EDGES[i], b = EDGES[i + 1], o = 9 + (i % 2) * 1.6, q = (s, t) => [P0[0] + U[0] * s + Wd[0] * t, P0[1] + U[1] * s + Wd[1] * t]; row.push({ p: [q(a, o), q(b, o), q(b, o + 16), q(a, o + 16)], h: 13, st: 'beige', cap: 1 }, { p: [q(a, o + 40), q(b, o + 40), q(b, o + 56), q(a, o + 56)], h: 13, st: 'beige', cap: 1 }); }
+    BLOCKS.push({ x: P0[0] + U[0] * -40 + Wd[0] * 17.8, y: P0[1] + U[1] * -40 + Wd[1] * 17.8, fx: U[0], fy: U[1], hl: 78, hw: 8.8, top: 14, R: 80 }, { x: P0[0] + U[0] * 74 + Wd[0] * 17.8, y: P0[1] + U[1] * 74 + Wd[1] * 17.8, fx: U[0], fy: U[1], hl: 24, hw: 8.8, top: 14, R: 27 }, { x: P0[0] + U[0] * -40 + Wd[0] * 57.8, y: P0[1] + U[1] * -40 + Wd[1] * 57.8, fx: U[0], fy: U[1], hl: 78, hw: 8.8, top: 14, R: 80 }, { x: P0[0] + U[0] * 74 + Wd[0] * 57.8, y: P0[1] + U[1] * 74 + Wd[1] * 57.8, fx: U[0], fy: U[1], hl: 24, hw: 8.8, top: 14, R: 27 });
     for (const k of D.x.sk) if (k.blk) BLOCKS.push({ x: k.blk[0], y: k.blk[1], fx: k.blk[2], fy: k.blk[3], hl: k.blk[4], hw: k.blk[5], top: 14, R: k.blk[4] + 8 });
     D.b.map(b => ({ p: b.p, h: b.h, st: b.h >= 12 ? (/^A-/.test(b.n || '') ? 'white' : 'beige') : 'old' })).concat(D.x.sk, row).forEach((b) => {
       const P = b.p.slice(); if (P.length > 2 && P[0][0] === P[P.length - 1][0] && P[0][1] === P[P.length - 1][1]) P.pop();
@@ -125,7 +125,8 @@ export class Muhaisnah {
     { const [x, y] = q(-20, 0); box('bump', 0x2b2b2b, x, y, 0.7, 8.6, 0, 0.09, sa); for (let t = -3.6; t <= 3.6; t += 1.8) { const [bx, by] = q(-20, t); box('yellow', 0, bx, by, 0.72, 0.6, 0.05, 0.1, sa); } }
     const sign = (s, t, w, h, z, lines, bg, fg) => { const [x, y] = q(s, t), pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: plate(lines, bg, fg, 512, Math.round(512 * h / w)), toneMapped: false })); pl.position.set(x, ground(x, y) + z, -y); pl.rotation.y = nf; grp.add(pl); };
     sign(-106, 8.8, 9, 1.5, 4.3, ['DEWA STAFF BUILDING', 'سكن موظفي هيئة كهرباء ومياه دبي'], '#0b6b4f', '#ffffff');
-    'ABCDEFGH'.split('').forEach((c, i) => { const j = i < 6 ? i : i + 1, o = 9 + (j % 2) * 1.6; if (EDGES[j + 1] === undefined) return; const m = (EDGES[j] + EDGES[j + 1]) / 2; sign(m, o - 0.2, 0.9, 0.9, 3.3, [c], '#f4f1e8', '#3b3b3b'); const [x, y] = q(m, o - 1.2); box('steps', 0xcfc9bb, x, y, 3, 2.2, 0, 0.5, sa); });
+    sign(-34, 8.8, 9, 1.5, 4.3, ['DEWA STAFF BUILDING', 'سكن موظفي هيئة كهرباء ومياه دبي'], '#0b6b4f', '#ffffff');
+    'GFEDCBAH'.split('').forEach((c, i) => { const j = i < 6 ? i : i + 1, o = 9 + (j % 2) * 1.6; if (EDGES[j + 1] === undefined) return; const m = (EDGES[j] + EDGES[j + 1]) / 2; sign(m, o - 0.2, 0.9, 0.9, 3.3, [c], '#f4f1e8', '#3b3b3b'); const [x, y] = q(m, o - 1.2); box('steps', 0xcfc9bb, x, y, 3, 2.2, 0, 0.5, sa); });
     for (const [px, py] of [[7214, 3716], [7222, 3728], [7266, 3722]]) { cyl('palmt', 0x8a7458, px, py, 0.25, 0, 6.5, 0.2); for (let i = 0; i < 8; i++) { const g = new THREE.BoxGeometry(0.5, 0.08, 3.2); g.translate(0, 0, 1.6); g.rotateX(0.5); g.rotateY(i / 8 * 6.283); g.translate(px, ground(px, py) + 6.5, -py); mat('palml', 0x3f8a3a); (bins.palml ||= []).push(g); } }
     for (const k in bins) { const m = new THREE.Mesh(mergeGeometries(bins[k]), M[k]); m.castShadow = true; m.receiveShadow = true; grp.add(m); for (const g of bins[k]) g.dispose(); }
     this.scene.add(grp);

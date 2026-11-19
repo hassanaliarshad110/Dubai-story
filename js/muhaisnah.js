@@ -57,6 +57,7 @@ export class Muhaisnah {
     const W = { beige: [[], [], []], white: [[], [], []], old: [[], [], []] };
     const row = [], caps = []; for (let i = 0; i < EDGES.length - 1; i++) { if (EDGES[i] === 38) continue; const a = EDGES[i], b = EDGES[i + 1], o = 9 + (i % 2) * 1.6, q = (s, t) => [P0[0] + U[0] * s + Wd[0] * t, P0[1] + U[1] * s + Wd[1] * t]; row.push({ p: [q(a, o), q(b, o), q(b, o + 16), q(a, o + 16)], h: 13, st: 'beige', cap: 1 }); }
     BLOCKS.push({ x: P0[0] + U[0] * -40 + Wd[0] * 17.8, y: P0[1] + U[1] * -40 + Wd[1] * 17.8, fx: U[0], fy: U[1], hl: 78, hw: 8.8, top: 14, R: 80 }, { x: P0[0] + U[0] * 74 + Wd[0] * 17.8, y: P0[1] + U[1] * 74 + Wd[1] * 17.8, fx: U[0], fy: U[1], hl: 24, hw: 8.8, top: 14, R: 27 });
+    for (const k of D.x.sk) if (k.blk) BLOCKS.push({ x: k.blk[0], y: k.blk[1], fx: k.blk[2], fy: k.blk[3], hl: k.blk[4], hw: k.blk[5], top: 14, R: k.blk[4] + 8 });
     D.b.map(b => ({ p: b.p, h: b.h, st: b.h >= 12 ? (/^A-/.test(b.n || '') ? 'white' : 'beige') : 'old' })).concat(D.x.sk, row).forEach((b) => {
       const P = b.p.slice(); if (P.length > 2 && P[0][0] === P[P.length - 1][0] && P[0][1] === P[P.length - 1][1]) P.pop();
       let A = 0, cx = 0, cy = 0; for (let i = 0; i < P.length; i++) { const p = P[i], q = P[(i + 1) % P.length]; A += p[0] * q[1] - q[0] * p[1]; cx += p[0]; cy += p[1]; } cx /= P.length; cy /= P.length;

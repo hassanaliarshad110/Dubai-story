@@ -383,7 +383,7 @@ export class Crime {
     const p = this.g.player, tr = this.g.traffic; let best = null, bd = 5.5;
     for (const u of this.units) { if (u.dead) continue; const d = Math.hypot(u.x - p.x, u.y - p.y); if (d < bd && Math.abs(u.v || 0) < 6) { bd = d; best = u; } }
     if (!best || !tr.pieces.length) return; this.units.splice(this.units.indexOf(best), 1);
-    tr.cars.push({ mesh: best.mesh, parked: true, x: best.x, y: best.y, h: best.h, gy: best.gy, v: 0, s: 0, dir: 1, piece: tr.pieces[0], mission: true, hp: 260, owned: false });
+    tr.cars.push({ mesh: best.mesh, parked: true, x: best.x, y: best.y, h: best.h, gy: best.gy, v: 0, s: 0, dir: 1, piece: { tile: null }, mission: true, hp: 260, owned: false });
     this.atLeast(2, 'You took a Dubai Police car!'); toast('🚓 Dubai Police car. Siren on the horn.', 2600);
   }
   spawnUnit() {

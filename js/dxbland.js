@@ -6,7 +6,7 @@ import { ground } from './terrain.js?v=11112231';
 import { HIDE_BLD } from './tiles.js?v=11112231';
 
 // the map's plain blocks these replace: [x, y, radius, taller than]
-const HIDE = [[-7370, -6134, 62, 40], [-5860, -2757, 45, 30], [-5159, -1815, 20, 100], [-5683, -2919, 30, 200]];
+const HIDE = [[-7376, -6305, 46, 100], [-6067, -3057, 15, 200], [-6388, -3581, 12, 200], [-6332, -3504, 14, 200], [-6043, -3017, 12, 150], [-6440, -3664, 16, 150], [-6754, -4186, 15, 100], [-7370, -6134, 62, 40], [-5860, -2757, 45, 30], [-5159, -1815, 20, 100], [-5683, -2919, 30, 200]];
 export function prepLandmarks(world) {
   HIDE_BLD.push(...HIDE);
   const gone = s => { let cx = 0, cy = 0; for (const p of s.r) { cx += p[0]; cy += p[1]; } cx /= s.r.length; cy /= s.r.length; return HIDE.some(h => Math.hypot(h[0] - cx, h[1] - cy) < h[2] && s.h > h[3]); };
@@ -41,6 +41,17 @@ function prism(P, y0, tops) {
   for (let i = 1; i < n - 1; i++) { pos.push(P[0][0], tops[0], P[0][1], P[i][0], tops[i], P[i][1], P[i + 1][0], tops[i + 1], P[i + 1][1]); uv.push(0, 0, 0, 0, 0, 0); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.computeVertexNormals(); return g;
 }
+// a skin stretched over a stack of outlines (all with the same number of points): rings[i] = [[x, z], ...] at height ys[i]
+function loft(rings, ys, cap = true) {
+  const pos = [], uv = [], n = rings[0].length;
+  for (let k = 0; k < rings.length - 1; k++) { let run = 0; const A = rings[k], B = rings[k + 1], y0 = ys[k], y1 = ys[k + 1];
+    for (let i = 0; i < n; i++) { const j = (i + 1) % n, l = Math.hypot(A[j][0] - A[i][0], A[j][1] - A[i][1]);
+      pos.push(A[i][0], y0, A[i][1], A[j][0], y0, A[j][1], B[j][0], y1, B[j][1], A[i][0], y0, A[i][1], B[j][0], y1, B[j][1], B[i][0], y1, B[i][1]);
+      uv.push(run, y0, run + l, y0, run + l, y1, run, y0, run + l, y1, run, y1); run += l; } }
+  if (cap) { const T = rings[rings.length - 1], y = ys[ys.length - 1]; for (let i = 1; i < n - 1; i++) { pos.push(T[0][0], y, T[0][1], T[i][0], y, T[i][1], T[i + 1][0], y, T[i + 1][1]); uv.push(0, 0, 0, 0, 0, 0); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.computeVertexNormals(); return g;
+}
+const rect = (w, d) => [[-w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2], [w / 2, -d / 2]];
 const DS = THREE.DoubleSide;
 
 export class DubaiLandmarks {
@@ -121,6 +132,56 @@ export class DubaiLandmarks {
       for (let i = 0; i < 4; i++) { const fin = new THREE.Mesh(new THREE.BoxGeometry(2.2, Hh - 6, 2.2), white); fin.position.set((i & 1 ? 1 : -1) * (S / 2 + 0.3), Hh / 2 + 3, (i & 2 ? 1 : -1) * (S / 2 + 0.3)); grp.add(fin); }
       add(-5159, -1815, 41, grp);
     }
+    // ---------------------------------------------------------------- The Binary by OMNIYAT: the green glass sail and its dark twin
+    {
+      const grp = new THREE.Group(), day = glass('#1f7f78', '#c9d6d6', '#3fa39a'), night = glass(0, 0, 0, true);
+      const mat = new THREE.MeshLambertMaterial({ map: day, emissive: 0xffffff, emissiveMap: night, emissiveIntensity: 0, side: DS }); this.lit.push([mat, 0.3]);
+      const dark = new THREE.MeshLambertMaterial({ map: glass('#0f3b3a', '#1c5552', '#145049'), emissive: 0xffffff, emissiveMap: night, emissiveIntensity: 0, side: DS }); this.lit.push([dark, 0.3]);
+      const almond = (L, Wd) => { const P = [], N = 14; for (let i = 0; i <= N; i++) { const t = i / N; P.push([-30 + L * t, Wd / 2 * Math.pow(Math.sin(Math.PI * t), 0.55)]); } for (let i = N - 1; i > 0; i--) { const t = i / N; P.push([-30 + L * t, -Wd / 2 * Math.pow(Math.sin(Math.PI * t), 0.55)]); } return P; };
+      const R = [], Y = []; for (let k = 0; k <= 30; k++) { const t = k / 30, y = 22 + t * 110; let L = 21 + 40 * Math.pow(1 - t, 2.1), Wd = 17; if (t > 0.9) { const q = (t - 0.9) / 0.1, c = Math.sqrt(Math.max(0.02, 1 - q * q)); L *= c; Wd *= c; } R.push(almond(L, Wd)); Y.push(y); }
+      const sail = new THREE.Mesh(loft(R, Y), mat); sail.castShadow = true; grp.add(sail);
+      const base = new THREE.Mesh(loft([almond(61, 17), almond(61, 17)], [0, 22], false), mat); grp.add(base);
+      const ell = (a, b, n = 20) => Array.from({ length: n }, (_, i) => [Math.cos(-i / n * 6.2832) * a, Math.sin(-i / n * 6.2832) * b]);
+      const twin = new THREE.Mesh(loft([ell(15, 9.5), ell(15, 9.5), ell(14.2, 9)], [0, 106, 110]), dark); twin.position.set(-20, 0, -14.6); twin.castShadow = true; grp.add(twin);
+      // the podium: glass floors behind white bands on round columns, and the name over the door
+      const white = new THREE.MeshLambertMaterial({ color: 0xeef0f1 }), pg = new THREE.MeshLambertMaterial({ map: glass('#1a6f6a', '#e6eaea', '#2f8f88') });
+      const pod = new THREE.Mesh(prism(rect(44, 30), 5, [22, 22, 22, 22]), pg); pod.material.side = DS; pod.position.set(18, 0, 22); grp.add(pod);
+      for (const y of [5, 22]) { const band = new THREE.Mesh(new THREE.BoxGeometry(45.5, 1.2, 31.5), white); band.position.set(18, y, 22); grp.add(band); }
+      for (let i = 0; i < 6; i++) { const col = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 5, 10), white); col.position.set(-2 + i * 8, 2.5, 36.4); grp.add(col); }
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(17, 4.6), new THREE.MeshBasicMaterial({ map: tex(512, 140, (g, w, h) => { g.fillStyle = '#2a2d30'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '300 62px "Segoe UI", Roboto, Arial, sans-serif'; try { g.letterSpacing = '6px'; } catch (e) { } g.fillText('THE BINARY', w / 2, 50); g.font = '400 30px "Segoe UI", Roboto, Arial, sans-serif'; try { g.letterSpacing = '10px'; } catch (e) { } g.fillText('BY OMNIYAT', w / 2, 106); }), toneMapped: false })); sign.position.set(18, 9.2, 37.2); grp.add(sign);
+      add(-7370.6, -6296.8, 102, grp);
+    }
+
+    // ---------------------------------------------------------------- Sheikh Zayed Road: the towers you know by their tops
+    const tower = (x, y, rot, build) => { const grp = new THREE.Group(); build(grp); add(x, y, rot, grp); };
+    const gm = (base, band, mull, k = 0.3) => { const m = new THREE.MeshLambertMaterial({ map: glass(base, band, mull), emissive: 0xffffff, emissiveMap: glass(0, 0, 0, true), emissiveIntensity: 0, side: DS }); this.lit.push([m, k]); return m; };
+    const pm = c => new THREE.MeshLambertMaterial({ color: c, side: DS });
+    const box = (grp, w, d, y0, y1, m, w1 = w, d1 = d) => { const b = new THREE.Mesh(loft([rect(w, d), rect(w1, d1)], [y0, y1]), m); b.castShadow = true; grp.add(b); return b; };
+    const needle = (grp, y0, y1, r, m, x = 0, z = 0) => { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.15, r, y1 - y0, 8), m); s.position.set(x, (y0 + y1) / 2, z); grp.add(s); };
+    // Al Yaqoub Tower: the clock tower (328 m)
+    tower(-6067.5, -3057.1, 56, g => {
+      const stone = gm('#8d7a5e', '#c9b892', '#a8946f'), cap = pm(0x6f6a5c), gold = pm(0xc9a85a);
+      box(g, 36, 36, 0, 30, stone); box(g, 30, 30, 30, 222, stone); box(g, 33, 33, 222, 228, cap); box(g, 31, 31, 228, 256, stone);
+      const face = tex(256, 256, (c, w, h) => { c.fillStyle = '#b9a67e'; c.fillRect(0, 0, w, h); c.fillStyle = '#f4efe0'; c.beginPath(); c.arc(128, 128, 108, 0, 7); c.fill(); c.strokeStyle = '#2a2418'; c.lineWidth = 9; c.stroke(); c.lineWidth = 7; for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; c.beginPath(); c.moveTo(128 + Math.sin(a) * 84, 128 - Math.cos(a) * 84); c.lineTo(128 + Math.sin(a) * 100, 128 - Math.cos(a) * 100); c.stroke(); } c.lineWidth = 9; c.beginPath(); c.moveTo(128, 128); c.lineTo(128 + 50, 128 - 30); c.stroke(); c.lineWidth = 6; c.beginPath(); c.moveTo(128, 128); c.lineTo(128 - 18, 128 - 88); c.stroke(); });
+      const fm = new THREE.MeshLambertMaterial({ map: face, emissive: 0xffffff, emissiveMap: face, emissiveIntensity: 0 }); this.lit.push([fm, 0.8]);
+      for (let i = 0; i < 4; i++) { const f = new THREE.Mesh(new THREE.PlaneGeometry(22, 22), fm); f.position.set(Math.sin(i * 1.5708) * 15.7, 242, Math.cos(i * 1.5708) * 15.7); f.rotation.y = i * 1.5708; g.add(f); }
+      box(g, 33, 33, 256, 261, cap); box(g, 24, 24, 261, 276, stone); box(g, 24, 24, 276, 318, cap, 1.5, 1.5); needle(g, 316, 328, 0.8, gold);
+      for (let i = 0; i < 4; i++) box(g, 4, 4, 261, 274, cap, 0.4, 0.4).position.set((i & 1 ? 1 : -1) * 14, 0, (i & 2 ? 1 : -1) * 14);
+    });
+    // Rose Rayhaan by Rotana: the slim blue one (333 m)
+    tower(-6388.3, -3581.4, -122, g => { const m = gm('#3f6fa8', '#c8d6e6', '#5b8cc4'), s = pm(0xdfe5ea); box(g, 30, 27, 0, 24, m); box(g, 26, 23, 24, 262, m); box(g, 26, 23, 262, 296, m, 8, 7); box(g, 8, 7, 296, 304, s, 3, 3); needle(g, 302, 333, 1.3, s); });
+    // Gevora Hotel: gold, with the pyramid crown (356 m)
+    tower(-6332.7, -3503.9, -31, g => { const m = gm('#7a6a3a', '#d8c27a', '#b39a4c'), gold = pm(0xd4b25a); box(g, 36, 34, 0, 28, m); box(g, 32, 30, 28, 292, m); box(g, 35, 33, 292, 298, gold); box(g, 28, 26, 298, 312, m); box(g, 28, 26, 312, 346, gold, 2, 2); needle(g, 344, 356, 0.9, gold); for (let i = 0; i < 4; i++) { box(g, 6, 6, 298, 318, gold, 0.5, 0.5).position.set((i & 1 ? 1 : -1) * 14.5, 0, (i & 2 ? 1 : -1) * 13.5); } });
+    // The Tower: stepped steel crown and a long spire (243 m)
+    tower(-6042.5, -3017.1, 57, g => { const m = gm('#5f7486', '#c7d0d8', '#8296a6'), s = pm(0xcfd6dc); box(g, 29, 27, 0, 178, m); box(g, 24, 22, 178, 192, m); box(g, 18, 17, 192, 203, m); box(g, 18, 17, 203, 216, s, 3, 3); needle(g, 214, 243, 1.2, s); });
+    // 21st Century Tower: white and blue, mast on the roof (269 m)
+    tower(-6436.5, -3661.4, 58, g => { const m = gm('#4a78b0', '#f1f3f5', '#dfe6ee'), s = pm(0xe9edf0), red = pm(0xc8202c); box(g, 42, 26, 0, 222, m); box(g, 44, 28, 222, 226, s); box(g, 30, 18, 226, 236, m); needle(g, 236, 262, 1.1, s); needle(g, 260, 269, 0.5, red); });
+    // Dusit Thani: two legs leaning in to meet, like hands pressed together (153 m)
+    tower(-6753.8, -4185.6, -119, g => {
+      const m = gm('#3c78b4', '#dfe7ee', '#6aa0d4'), s = pm(0xe6ebef);
+      for (const sx of [-1, 1]) { const leg = new THREE.Mesh(loft([rect(15, 36), rect(15, 30), rect(13, 20)], [0, 80, 128]), m); leg.geometry.translate(0, 0, 0); const P = leg.geometry.attributes.position; for (let i = 0; i < P.count; i++) { const y = P.getY(i); P.setX(i, P.getX(i) + sx * (15.5 - Math.min(1, y / 128) * 9)); } P.needsUpdate = true; leg.geometry.computeVertexNormals(); leg.castShadow = true; g.add(leg); }
+      box(g, 26, 20, 112, 140, m, 12, 10); box(g, 12, 10, 140, 146, s, 3, 3); needle(g, 144, 153, 0.8, s); box(g, 50, 40, 0, 12, m);
+    });
   }
   // the windows come on at dusk
   update() {

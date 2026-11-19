@@ -227,22 +227,23 @@ export class DubaiFun {
         gate.position.set(1144.6, gy0, 151.75); this.scene.add(gate);
       }).catch(e => { console.warn('home', e); this.home = this.home === 'loading' ? 'none' : this.home; });
     }
+    if (this.homeCars && hd > 520) this.homeCars = false;      // they are put back when you come home
     if (!this.homeCars && hd < 260 && g.traffic && g.traffic.pieces && g.traffic.pieces.length) {
-      this.homeCars = true;
+      this.homeCars = true; this.homeList = [];
       // parked nose to the wall, all on Dubai plates: grey Sentra, red Yaris, (the gate), black Jeep, white Sorento
       for (const [k, x] of [['sentra', 1135.6], ['yaris', 1139.0], ['jeep', 1149.9], ['sorento', 1153.6]]) {
         plateOpt.dubaiOnly = true; let mesh; try { mesh = makeCar(k); } finally { plateOpt.dubaiOnly = false; }
-        const y = -154.4, gy = ground(x, y), car = { mesh, parked: true, x, y, h: 0, gy, v: 0, s: 0, dir: 1, piece: g.traffic.pieces[0], mission: true, hp: 200 };
+        const y = -154.4, gy = ground(x, y), car = { mesh, parked: true, x, y, h: 0, gy, v: 0, s: 0, dir: 1, piece: { tile: null }, mission: true, hp: 200 }; this.homeList.push(car);
         mesh.position.set(x, gy + TYRE_Y, -y); mesh.rotation.y = rotY(0); this.scene.add(mesh); g.traffic.cars.push(car);
       }
     }
     // your own car is always waiting outside your home (Farah: the black Tiida at AB Residence 2)
     const hm = HOMES[g.story];
-    if (hm && hm.car && !this.stock && !this.ownOnce && g.traffic && Math.hypot(hm.x - p.x, hm.y - p.y) < 220 && (this.ownOnce = true)) this.stock = { x: hm.x + 3.4, y: hm.y + 1.5, h: hm.h || 0, kind: hm.car, tell: true };
+    if (hm && hm.car && !this.stock && p.mode === 'foot' && (!this.ownCar || this.ownCar.dead) && g.traffic && Math.hypot(hm.x - p.x, hm.y - p.y) < 220) this.stock = { x: hm.x + 3.4, y: hm.y + 1.5, h: hm.h || 0, kind: hm.car, tell: true };
     if (this.stock && g.traffic && g.traffic.pieces && g.traffic.pieces.length && Math.hypot(this.stock.x - p.x, this.stock.y - p.y) < 260) {
       const s = this.stock; this.stock = null; plateOpt.dubaiOnly = true; let mesh; try { mesh = makeCar(s.kind); } finally { plateOpt.dubaiOnly = false; }
       if (s.tell) toast('🚗 Your black Tiida is parked right beside you.', 3500);
-      const gy = ground(s.x, s.y), car = { mesh, parked: true, x: s.x, y: s.y, h: s.h, gy, v: 0, s: 0, dir: 1, piece: g.traffic.pieces[0], mission: true, hp: 200, owned: true };
+      const gy = ground(s.x, s.y), car = { mesh, parked: true, x: s.x, y: s.y, h: s.h, gy, v: 0, s: 0, dir: 1, piece: { tile: null }, mission: true, hp: 200, owned: true };
       mesh.position.set(s.x, gy + TYRE_Y, -s.y); mesh.rotation.y = rotY(s.h); this.scene.add(mesh); g.traffic.cars.push(car); this.ownCar = car;
     }
     // ---- OMNIYAT signs: put one on the roof once that tower has loaded

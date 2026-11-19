@@ -602,6 +602,7 @@ function loop(now) {
     if (game.life) game.life.update(dt, player.x, player.y);
     if (game.mp) game.mp.update(dt, player, camH);
     if (game.games && game.mode === 'free' && !game.dubai) game.games.update(dt);
+    if (game.games && game.dubai) { game.games.updateRide(); game.games.rideHint(dt); }      // Dubai: no crew games, but you can still ride in a friend's car or helicopter
     if (game.crime && !blocked) game.crime.update(dt);
     if (game.dxm && !blocked) game.dxm.update(dt);
     if (game.fun && !blocked) game.fun.update(dt);

@@ -182,6 +182,11 @@ export class Games {
     }
     return false;
   }
+  // standing next to a friend's car or helicopter: say how to get in
+  rideHint(dt) {
+    const mp = this.g.mp, p = this.g.player; if (!mp || !mp.on || this.ride || p.mode !== 'foot' || (this.hintT = (this.hintT || 0) - dt) > 0) return;
+    for (const o of mp.others.values()) { if (!o.car || (o.mode !== 'car' && o.mode !== 'heli')) continue; const low = o.mode !== 'heli' || (o.z - ground(o.x, o.y)) < 3; if (low && Math.hypot(o.x - p.x, o.y - p.y) < (o.mode === 'heli' ? 7 : 4.5)) { this.hintT = 12; toast(`Tap 🚗 to ride with ${o.name} in their ${o.mode === 'heli' ? 'helicopter' : 'car'}.`); return; } }
+  }
   leaveRide() {
     const R = this.ride; if (!R) return; this.ride = null; this.$('#g-ride').hidden = true;
     const p = this.g.player, mp = this.g.mp, o = mp && mp.others.get(R.id), h = o ? o.h : R.v.h;

@@ -70,7 +70,8 @@ export class Multiplayer {
     this.connect();
   }
   connect() {
-    try { this.ws = new WebSocket(MP_URL); } catch (e) { this.fail(); return; }
+    // each city has its own room on the same server
+    try { this.ws = new WebSocket(this.g.dubai ? MP_URL.replace('/room/calgary', '/room/dubai') : MP_URL); } catch (e) { this.fail(); return; }
     this.ws.onopen = () => { this.send({ t: 'hello', name: this.name, look: (this.g.player && this.g.player.look) || this.g.look || 'ali' }); this.$('#mp-chat').hidden = false; this.$('#mp-talk').hidden = false; toast('🌐 You are online. Hold 🎤 to talk to people near you.'); };
     this.ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (err) { return; } this.onMsg(m); };
     this.ws.onclose = () => { if (this.on) { this.clearAll(); setTimeout(() => this.on && this.connect(), 4000); } };

@@ -1,5 +1,5 @@
 {
- "built": "2026-11-18 23:57:14",
+ "built": "2026-11-19 14:06:15",
  "osm_date": "",
  "phases": [
   {
@@ -50,8 +50,8 @@
  "tiles": 1245,
  "packs": 33,
  "counts": {
-  "ramp_nodes": 21153,
-  "road": 43223,
+  "ramp_nodes": 7575,
+  "road": 43222,
   "path": 14948,
   "air": 380,
   "rail": 203,
@@ -63,7 +63,7 @@
   "sea": 2,
   "overture_buildings": 14673,
   "building": 107068,
-  "walls": 52345,
+  "walls": 52344,
   "tree_sat": 113372,
   "tree": 1623,
   "businesses": 12090,
@@ -265,9 +265,9 @@
   "Al Rowaiyah 1"
  ],
  "spawn": {
-  "x": -162.9,
-  "y": 500.0,
-  "h": -1.248,
+  "x": -78.1,
+  "y": 282.1,
+  "h": -1.197,
   "road": "2 Street"
  },
  "towers_without_height": [

@@ -26,6 +26,7 @@ export const OMNIYAT = [
   { label: 'Vela by OMNIYAT', x: -5141, y: -5975, note: 'Dorchester Collection residences on the water.' },
 ];
 const EXTRA = [
+  { label: 'AB Residence 2, Al Warsan', x: 5785, y: -10424 },
   { label: '27C Street, Al Garhoud', x: 1137, y: -160 },
   { label: 'Karakccino', x: 1113, y: -1188 },
   { label: 'Karak House', x: -6377, y: -5871 },
@@ -36,7 +37,7 @@ const EXTRA = [
 // where each character lives, and the car that waits outside
 export const HOMES = {
   hassan: { x: 1146, y: -158.5, h: 0, name: '27C Street, Al Garhoud' },
-  farah: null,      // AB Residence 2, Al Warsan (filled in below once that part of the map is built)
+  farah: { x: 5784.7, y: -10423.8, h: 0, name: 'AB Residence 2, Al Warsan', car: 'tiida' },      // her black Tiida waits outside
 };
 const SALIK = [['Al Garhoud Bridge', -265, -1236], ['Al Maktoum Bridge', -1894, 856], ['Business Bay Crossing', 951, -1796], ['Airport Tunnel', 3020, 610], ['Al Safa', -7700, -5560], ['Infinity Bridge', -3959, 3756]];
 const FINE = over => over > 80 ? 3000 : over > 60 ? 2000 : over > 50 ? 1500 : over > 40 ? 1000 : over > 30 ? 700 : 600;

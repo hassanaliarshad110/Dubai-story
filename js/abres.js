@@ -3,9 +3,9 @@
 // on top, and white apartment blocks above it with blue glass, glass balconies, dark grey frames and slatted roof canopies.
 // Across the road is the fenced, sandy building site with its drilling rig, and the road is lined with barriers.
 import * as THREE from 'three';
-import { ground } from './terrain.js?v=11190630';
-import { BLOCKS } from './stagekit.js?v=11190630';
-import { HIDE_FEAT } from './tiles.js?v=11190630';
+import { ground } from './terrain.js?v=11190752';
+import { BLOCKS } from './stagekit.js?v=11190752';
+import { HIDE_FEAT } from './tiles.js?v=11190752';
 
 export const AB = { x: 4925.7, y: -10455.3, b: 0.3658, L: 48, D: 52, road: 36.5 };
 HIDE_FEAT.push([5, 4931, -10456, 14], [10, 4932, -10461, 14], [10, 4923, -10488, 8]);      // the empty plot and its wall on the map: the building stands there now      // centre, bearing of its long side, size, distance to the road's middle

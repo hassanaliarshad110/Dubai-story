@@ -2,8 +2,8 @@
 // fuel stations), turned to face the nearest street. Built with the map tile and removed with it.
 import * as THREE from 'three';
 import { mergeGeometries } from '../vendor/jsm/utils/BufferGeometryUtils.js';
-import { L, roadIndex } from './tiles.js?v=11190630';
-import { ground } from './terrain.js?v=11190630';
+import { L, roadIndex } from './tiles.js?v=11190752';
+import { ground } from './terrain.js?v=11190752';
 
 const FUEL = 15;
 let MAT = null, LIGHT = null;

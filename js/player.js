@@ -1,11 +1,11 @@
 // The player: walking, running and driving. Heading h: 0 = north, clockwise (east = PI/2).
 import * as THREE from 'three';
-import { Character, heroReady } from './rig.js?v=11190630';
-import { spinWheels } from './vehicles.js?v=11190630';
-import { lightsOn } from './carlights.js?v=11190630';
-import { blockPush } from './stagekit.js?v=11190630';
-import { ground } from './terrain.js?v=11190630';
-import { syncHeli } from './heli.js?v=11190630';
+import { Character, heroReady } from './rig.js?v=11190752';
+import { spinWheels } from './vehicles.js?v=11190752';
+import { lightsOn } from './carlights.js?v=11190752';
+import { blockPush } from './stagekit.js?v=11190752';
+import { ground } from './terrain.js?v=11190752';
+import { syncHeli } from './heli.js?v=11190752';
 
 export const dirOf = h => [Math.sin(h), Math.cos(h)];           // (east, north)
 export const rotY = h => Math.PI - h;

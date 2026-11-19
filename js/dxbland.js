@@ -2,8 +2,8 @@
 //   The Opus by OMNIYAT (the glass cube with the free-form void), the Museum of the Future (the silver ring with the
 //   calligraphy windows), the Emirates Towers (triangular, slanted tops, spires) and the Sheikh Rashid Tower at the Trade Centre
 import * as THREE from 'three';
-import { ground } from './terrain.js?v=11190630';
-import { HIDE_BLD } from './tiles.js?v=11190630';
+import { ground } from './terrain.js?v=11190752';
+import { HIDE_BLD } from './tiles.js?v=11190752';
 
 // the map's plain blocks these replace: [x, y, radius, taller than]
 const HIDE = [[-7376, -6305, 46, 100], [-6067, -3057, 15, 200], [-6388, -3581, 12, 200], [-6332, -3504, 14, 200], [-6043, -3017, 12, 150], [-6440, -3664, 16, 150], [-6754, -4186, 15, 100], [-7370, -6134, 62, 40], [-5860, -2757, 45, 30], [-5159, -1815, 20, 100], [-5683, -2919, 30, 200]];

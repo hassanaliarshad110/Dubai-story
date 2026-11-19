@@ -1,8 +1,8 @@
 // Low-poly people and vehicles built from boxes, so nothing needs to be downloaded.
 import * as THREE from 'three';
-import { busSignTexture } from './textures.js?v=11190630';
-import { vehiclesReady, makeKarachiVehicle } from './vehicles.js?v=11190630';
-import { makeCar3D, addPlates, CAR3D, plateOpt } from './cars3d.js?v=11190630';
+import { busSignTexture } from './textures.js?v=11190752';
+import { vehiclesReady, makeKarachiVehicle } from './vehicles.js?v=11190752';
+import { makeCar3D, addPlates, CAR3D, plateOpt } from './cars3d.js?v=11190752';
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const mat = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });

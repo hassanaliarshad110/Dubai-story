@@ -1,7 +1,7 @@
 // Burj Khalifa at night: an LED show running up the facade, lasers from the tower and the plaza, sky beams,
 // fireworks, and the Dubai Fountain dancing on the lake below. Starts at dusk and runs all night.
 import * as THREE from 'three';
-import { ground } from './terrain.js?v=11190630';
+import { ground } from './terrain.js?v=11190752';
 
 // the tower's outline (radius at height), a little outside the map's stepped model, up to the tip of the spire
 const PROFILE = [[55, 0], [55, 70], [50, 130], [46, 200], [40, 270], [37, 360], [29, 405], [28, 520], [23, 560], [19, 605], [16, 680], [12, 710], [8, 740], [4.5, 760], [2.2, 790], [0.5, 828]];

@@ -3,7 +3,7 @@
 // glass end walls the trains run through, platforms inside, and on the raised line a concrete base,
 // covered footbridges and entrance pods on both sides.
 import * as THREE from 'three';
-import { ground } from './terrain.js?v=11190630';
+import { ground } from './terrain.js?v=11190752';
 
 const LH = 62, RW = 15.5, RH = 13.5, TAPER = 0.7;      // half length, half width and height of the shell
 const f = u => Math.sqrt(1 - (TAPER * u) * (TAPER * u));

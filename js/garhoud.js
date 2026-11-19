@@ -5,15 +5,15 @@
 // with its parking bays, lamp posts, phone mast, shade canopy and the shop signs down to Eat & Drink.
 import * as THREE from 'three';
 import { mergeGeometries } from '../vendor/jsm/utils/BufferGeometryUtils.js';
-import { ground } from './terrain.js?v=11190630';
-import { HIDE_BLD } from './tiles.js?v=11190630';
-import { BLOCKS } from './stagekit.js?v=11190630';
-import { makeCar } from './actors.js?v=11190630';
-import { plateOpt } from './cars3d.js?v=11190630';
-import { TYRE_Y, rotY } from './player.js?v=11190630';
-import { Character } from './rig.js?v=11190630';
-import { standY } from './tiles.js?v=11190630';
-import { toast } from './hud.js?v=11190630';
+import { ground } from './terrain.js?v=11190752';
+import { HIDE_BLD } from './tiles.js?v=11190752';
+import { BLOCKS } from './stagekit.js?v=11190752';
+import { makeCar } from './actors.js?v=11190752';
+import { plateOpt } from './cars3d.js?v=11190752';
+import { TYRE_Y, rotY } from './player.js?v=11190752';
+import { Character } from './rig.js?v=11190752';
+import { standY } from './tiles.js?v=11190752';
+import { toast } from './hud.js?v=11190752';
 
 // the map's plain blocks on the south side of 27C Street and at the bend: the townhouses and the red-roofed villa stand there
 for (let x = 1090; x <= 1210; x += 10) HIDE_BLD.push([x, -184, 13.5, 0]);
@@ -84,7 +84,7 @@ export class Garhoud {
     }
     tree(1132.6, -150.2, 7.2, 3.0); tree(1157.2, -149.8, 7.6, 3.2); tree(1182, -150.4, 6.4, 2.6); tree(1109.5, -151.5, 6, 2.4);
     // a traffic cone by the parked cars, as in the photo
-    cyl('cone', 0xe8632a, 1147.6, -153.2, 0.2, 0, 0.6, 0.04); box('cone', 0, 1147.35, 1147.85, -153.45, -152.95, 0, 0.04);
+    cyl('cone', 0xe8632a, 1148.6, -152.4, 0.2, 0, 0.6, 0.04); box('cone', 0, 1148.35, 1148.85, -152.65, -152.15, 0, 0.04);
 
     // ============ the bend, and north to 29C Street ============
     signPost(1108.4, -165.6, ['27C  شارع'], Math.PI * 0.75);
@@ -210,18 +210,18 @@ export class Garhoud {
     }
   }
   unpark() { const g = this.g; for (const c of this.cars || []) if (!c.dead && Math.hypot(c.x - c.x0, c.y - c.y0) < 2) { this.scene.remove(c.mesh); const i = g.traffic.cars.indexOf(c); if (i >= 0) g.traffic.cars.splice(i, 1); } this.cars = null; }
-  // Kakina walks up and down the pavement across from the villa on 27C Street, and a child runs rings round her
+  // Kakina walks up and down right in front of the villa's gate on 27C Street, and a child runs rings round her
   family(dt, px, py) {
-    const near = Math.hypot(1136 - px, -164 - py) < 220;
+    const near = Math.hypot(1144 - px, -154 - py) < 220;
     if (!near) { if (this.kak) { this.scene.remove(this.kak.g); this.scene.remove(this.kid.g); this.kak = this.kid = null; } return; }
     if (!this.kak) {
       this.kak = new Character({ glb: 'npc_hijab', skin: 0xc99a76, shirt: 0x7a2f5a, pants: 0x2a2a30, hair: 0x15100d, fem: true }); this.kid = new Character({ glb: 'kid_boy', skin: 0xc99a76, shirt: 0xe0a020, pants: 0x2b3a55, hair: 0x15100d });
-      this.kid.g.scale.multiplyScalar(0.62); this.scene.add(this.kak.g); this.scene.add(this.kid.g); this.kx = 1136; this.kdir = 1; this.ka = 0; this.kwait = 0;
+      this.kid.g.scale.multiplyScalar(0.62); this.scene.add(this.kak.g); this.scene.add(this.kid.g); this.kx = 1144; this.kdir = 1; this.ka = 0; this.kwait = 0;
     }
     // she strolls between the two ends of the villa's front, pausing now and then to watch the child
-    let sp = 0; if (this.kwait > 0) this.kwait -= dt; else { sp = 1.05; this.kx += this.kdir * sp * dt; if (this.kx > 1144 || this.kx < 1127) { this.kdir *= -1; this.kwait = 2.5; } else if (Math.random() < dt * 0.06) this.kwait = 3; }
-    const ky = -164.7, kz = standY(this.kx, ky); this.kak.animate(dt, { speed: sp }); this.kak.g.position.set(this.kx, kz + 0.02, -ky); this.kak.g.rotation.y = Math.PI - (sp ? (this.kdir > 0 ? Math.PI / 2 : -Math.PI / 2) : Math.PI);
-    this.ka += dt * 2.1; const r = 1.55, cx = this.kx + Math.sin(this.ka) * r, cy = ky + Math.cos(this.ka) * r, ch = this.ka + Math.PI / 2;
+    let sp = 0; if (this.kwait > 0) this.kwait -= dt; else { sp = 0.8; this.kx += this.kdir * sp * dt; if (this.kx > 1146.8 || this.kx < 1142.2) { this.kdir *= -1; this.kwait = 2.5; } else if (Math.random() < dt * 0.06) this.kwait = 3; }
+    const ky = -154.3, kz = standY(this.kx, ky); this.kak.animate(dt, { speed: sp }); this.kak.g.position.set(this.kx, kz + 0.02, -ky); this.kak.g.rotation.y = Math.PI - (sp ? (this.kdir > 0 ? Math.PI / 2 : -Math.PI / 2) : Math.PI);
+    this.ka += dt * 2.1; const r = 1.2, cx = this.kx + Math.sin(this.ka) * r, cy = ky + Math.cos(this.ka) * r, ch = this.ka + Math.PI / 2;
     this.kid.animate(dt, { speed: 3.3, run: true }); this.kid.g.position.set(cx, standY(cx, cy) + 0.02, -cy); this.kid.g.rotation.y = Math.PI - ch;
     if (!this.kHi && Math.hypot(this.kx - px, ky - py) < 7) { this.kHi = true; toast('👋 Kakina is out in front of 27C with the little one.', 3500); }
   }

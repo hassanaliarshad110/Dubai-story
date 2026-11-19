@@ -1,8 +1,8 @@
 // Welcome billboards where main roads enter each ward, with a welcome from that ward's councillor.
 import * as THREE from 'three';
-import { ground } from './terrain.js?v=11190630';
-import { rotY, dirOf } from './player.js?v=11190630';
-import { lyricTexture } from './lyricboard.js?v=11190630';
+import { ground } from './terrain.js?v=11190752';
+import { rotY, dirOf } from './player.js?v=11190752';
+import { lyricTexture } from './lyricboard.js?v=11190752';
 
 let DATA = null;
 export async function loadBillboards() { try { DATA = await (await fetch('data/billboards.json')).json(); } catch (e) { DATA = null; } return !!DATA; }

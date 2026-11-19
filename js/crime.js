@@ -56,6 +56,8 @@ body.cine #wanted, body.cine #wp-fire, body.cine #wp-next, body.cine #wp-name { 
 @media (orientation: landscape) { #wp-fire { right: 236px; bottom: calc(env(safe-area-inset-bottom) + 26px); } #wp-next { right: 314px; bottom: calc(env(safe-area-inset-bottom) + 34px); } #wp-name { right: 236px; bottom: calc(env(safe-area-inset-bottom) + 98px); } }`;
 
 const V1 = new THREE.Vector3();
+// Dubai City Stories is a game without violence: no weapons to carry or fire, and the police chase and arrest, they never shoot
+const PEACE = true;
 export class Crime {
   constructor(game, scene) {
     this.g = game; this.scene = scene; this.w = 0; this.held = false; this.cool = 0;
@@ -89,7 +91,7 @@ export class Crime {
       if (!this.g.started || (e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) return;
       if (e.code === 'KeyQ' && !e.repeat) this.cycle(e.shiftKey ? -1 : 1);
       else if (e.code === 'KeyX' || e.code === 'ControlLeft' || e.code === 'ControlRight') { this.held = true; e.preventDefault(); }
-      else if (/^Digit\d$/.test(e.code) && !e.repeat) { const n = +e.code.slice(5); this.setWeapon(n === 0 ? 10 : n); }
+      else if (!PEACE && /^Digit\d$/.test(e.code) && !e.repeat) { const n = +e.code.slice(5); this.setWeapon(n === 0 ? 10 : n); }
     });
     addEventListener('keyup', e => { if (e.code === 'KeyX' || e.code === 'ControlLeft' || e.code === 'ControlRight') this.held = false; });
     addEventListener('blur', () => { this.held = false; });
@@ -98,7 +100,7 @@ export class Crime {
     addEventListener('pointerup', e => { if (e.pointerType === 'mouse' && e.button === 2) this.held = false; });
   }
   show(on) { for (const e of [this.elFire, this.elNext, this.elName]) e.style.display = on ? '' : 'none'; }
-  cycle(d) { this.setWeapon((this.w + d + WEAPONS.length) % WEAPONS.length); }
+  cycle(d) { if (PEACE) return; this.setWeapon((this.w + d + WEAPONS.length) % WEAPONS.length); }
   setWeapon(i) {
     if (!WEAPONS[i]) return; this.w = i; const W = WEAPONS[i];
     if (W.svg) this.elFire.innerHTML = W.svg; else this.elFire.textContent = W.icon; this.elName.textContent = W.name; toast(`${W.icon} ${W.name}`.trim(), 1200); this.updateHeld();
@@ -186,6 +188,7 @@ export class Crime {
   blockedAt(x, y, z) { if (z < ground(x, y)) return true; const tl = this.g.tiles, r = tl && tl.roofAt ? tl.roofAt(x, y) : null; return r != null && z < r; }
   // ---------------------------------------------------------------- firing
   fire() {
+    if (PEACE) return;
     const p = this.g.player, W = WEAPONS[this.w]; if (!p || this.g.deadT > 0 || p.mode === 'ride') return;
     if ((W.melee || W.throw) && p.mode !== 'foot') return;
     const o = this.origin(), T = this.targets();
@@ -310,7 +313,8 @@ export class Crime {
       const hh = Math.atan2(p.x - q.x, p.y - q.y); let sp = 0;
       if (d > 13 && this.stars > 0) { sp = 3.6; q.x += Math.sin(hh) * sp * dt; q.y += Math.cos(hh) * sp * dt; }
       q.z = standY(q.x, q.y); q.ch.animate(dt, { speed: sp, run: sp > 0 }); g.position.set(q.x, q.z + 0.05, -q.y); g.rotation.y = Math.PI - hh;
-      if (this.stars > 0 && d < 55 && (q.shootT -= dt) <= 0 && !(this.g.deadT > 0)) {
+      if (PEACE && this.stars > 0 && d < 2.5 && p.mode === 'foot' && !(this.g.deadT > 0)) { this.busted(); break; }
+      if (!PEACE && this.stars > 0 && d < 55 && (q.shootT -= dt) <= 0 && !(this.g.deadT > 0)) {
         q.shootT = 0.9 + Math.random() * 0.9; const hit = Math.random() < (p.mode === 'foot' ? 0.5 : 0.3) * Math.max(0.3, 1 - d / 70);
         this.tracer(q.x, q.y, q.z + 1.4, p.x + (hit ? 0 : (Math.random() - 0.5) * 3), p.y + (hit ? 0 : (Math.random() - 0.5) * 3), p.gy + 1.1, true); sfx.gun && sfx.gun('rifle', Math.max(0.15, 0.6 - d / 120));
         if (hit) hurt(4 + this.stars, 0, 0, 'shot');
@@ -432,8 +436,8 @@ export class Crime {
         const k = (3.2 - d) / (d || 1); p.x += dx * k * 0.6; p.y += dy * k * 0.6; u.x -= dx * k * 0.4; u.y -= dy * k * 0.4;
         if (onFoot && u.v > 4) hurt(Math.min(40, 8 + u.v * 1.5), dx / (d || 1), dy / (d || 1), 'car'); else if (!onFoot && Math.abs(p.v) > 6) { p.v *= 0.75; u.v *= 0.6; u.hp -= 12; if (u.hp <= 0) this.hitUnit(u, 1); }
       }
-      if (this.stars <= 2 && d < 8 && Math.abs(p.gy - u.gy) < 3 && (onFoot ? true : Math.abs(p.v) < 2) && p.mode !== 'heli') busting = true;
-      if (this.stars >= 2 && d < (p.mode === 'heli' ? 110 : 60) && (u.shootT -= dt) <= 0) {
+      if ((PEACE || this.stars <= 2) && d < 8 && Math.abs(p.gy - u.gy) < 3 && (onFoot ? true : Math.abs(p.v) < 2) && p.mode !== 'heli') busting = true;
+      if (!PEACE && this.stars >= 2 && d < (p.mode === 'heli' ? 110 : 60) && (u.shootT -= dt) <= 0) {
         u.shootT = Math.max(0.35, 1.5 - this.stars * 0.22) * (0.7 + Math.random() * 0.6);
         const oz = u.gy + 1.4, tz = p.gy + (onFoot ? 1.1 : 0.9), chance = (onFoot ? 0.4 : p.mode === 'heli' ? 0.12 : 0.22) + this.stars * 0.05;
         const hit = Math.random() < chance, mx = hit ? 0 : (Math.random() - 0.5) * 5, my = hit ? 0 : (Math.random() - 0.5) * 5;
@@ -454,7 +458,7 @@ export class Crime {
   // ---------------------------------------------------------------- every frame
   update(dt) {
     const p = this.g.player; if (!p) return;
-    if (this.elFire.style.display === 'none' && this.g.started) this.show(true);
+    if (PEACE) this.held = false; else if (this.elFire.style.display === 'none' && this.g.started) this.show(true);
     this.cool -= dt;
     const W = WEAPONS[this.w];
     if (this.held && this.cool <= 0 && !this.g.paused && !(this.g.deadT > 0)) { this.cool = W.every; this.fire(); }

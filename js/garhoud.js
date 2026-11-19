@@ -15,7 +15,9 @@ import { TYRE_Y, rotY } from './player.js?v=11190630';
 // the map's plain blocks on the south side of 27C Street and at the bend: the townhouses and the red-roofed villa stand there
 for (let x = 1090; x <= 1210; x += 10) HIDE_BLD.push([x, -184, 13.5, 0]);
 HIDE_BLD.push([1073, -147, 11, 0], [1069, -165, 6, 0]);
-const C = { x: 1000, y: -95 }, DS = THREE.DoubleSide;
+// on 31A Street: the Eat & Drink block, the Emirates Co-operative Society and Al Kabayel Centre are built by hand
+HIDE_BLD.push([759.2, -11.2, 5, 0], [688.5, -10.8, 5, 0], [593.5, -15, 5, 0]);
+const C = { x: 900, y: -80 }, DS = THREE.DoubleSide;
 const y27 = x => -160.5 + (x - 1118.7) * 0.03385;                       // the middle of 27C Street
 const y31 = x => x >= 1000 ? -30.6 + (x - 1000) * 0.0356 : x >= 843 ? -35.3 + (x - 843.1) * 0.03 : -36.2 + (x - 815) * 0.031;   // and of 31A Street
 function tex(w, h, draw, rx = 1, ry = 1) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = 4; return t; }
@@ -115,25 +117,89 @@ export class Garhoud {
     // ============ 31A Street, west to Eat & Drink ============
     dash(742, 1088, y31, 7, 3);
     const bay = (x0, x1, side) => { for (let x = x0; x <= x1; x += 2.6) box('line', 0xe8e8e4, x - 0.06, x + 0.06, y31(x) + side * 4.2, y31(x) + side * 9.2, 0.035, 0.05); box('line', 0, x0, x1, y31((x0 + x1) / 2) + side * 4.14, y31((x0 + x1) / 2) + side * 4.26, 0.035, 0.05); pave(tanPave, x0 - 1, x1 + 1, y31((x0 + x1) / 2) + side * 9.3, y31((x0 + x1) / 2) + side * 11.6, 2.4, 0.04); };
-    bay(1034, 1078, 1); bay(932, 992, 1); bay(846, 904, 1); bay(1004, 1060, -1); bay(884, 930, -1); bay(742, 786, 1);
+    bay(1034, 1078, 1); bay(932, 992, 1); bay(846, 904, 1); bay(1004, 1060, -1); bay(884, 930, -1);
     for (let x = 1070; x > 745; x -= 46) lamp(x, y31(x) + 9.8, 0, -1);
     // the phone mast, and the long beige shade canopy over a row of parked cars
     cyl('mast', 0xc9cdd0, 936, y31(936) + 13, 0.45, 0, 27, 0.22); for (const z of [22, 24.5, 26.5]) for (let i = 0; i < 3; i++) { const a = i / 3 * 6.283; box('ant', 0xe9ebec, 936 + Math.cos(a) * 0.7 - 0.12, 936 + Math.cos(a) * 0.7 + 0.12, y31(936) + 13 + Math.sin(a) * 0.7 - 0.12, y31(936) + 13 + Math.sin(a) * 0.7 + 0.12, z, z + 1.8); }
     { const cx = 890, cy = y31(890) + 7, g = new THREE.CylinderGeometry(3.4, 3.4, 22, 14, 1, true, 0, Math.PI); g.rotateZ(Math.PI / 2); g.rotateY(0); g.scale(1, 0.42, 1); const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0xd8c3a0, side: DS })); m.rotation.x = -Math.PI / 2; m.rotation.order = 'YXZ'; m.position.set(cx, ground(cx, cy) + 2.4, -cy); grp.add(m); for (const px of [-10, 0, 10]) for (const py of [-3.2, 3.2]) cyl('pole', 0, cx + px, cy + py, 0.07, 0, 2.5); }
-    // the shop signs near 20C Street and beyond: One Day Market, Century Express, Choithrams, Balsam Pharmacy, Eat & Drink
-    const shop = (x, w, lines, bg, fg) => { const y = y31(x) + 12.2; box('fascia', 0x3a3a3a, x - w / 2 - 0.15, x + w / 2 + 0.15, y, y + 0.2, 3.0, 4.5); panel(new THREE.MeshBasicMaterial({ map: plate(lines, bg, fg, 512, 128), toneMapped: false }), x, y - 0.03, 0, w, 1.3, 3.1); };
-    shop(828, 13, ['One Day Market'], '#1f8a3b', '#ffffff'); shop(812, 9, ['one day  ·  Day to Day'], '#c62828', '#fff36b');
-    shop(774, 9, ['Century Express'], '#101010', '#ffcf33'); shop(759, 10, ['Choithrams'], '#0f6b3a', '#ffffff'); shop(748, 7, ['Balsam Pharmacy'], '#ffffff', '#0a8f6a'); shop(736.5, 11, ['EAT & DRINK', 'Restaurant'], '#b3131b', '#ffe45c');
     signPost(797.5, y31(797) + 5.2, ['20C St'], 0, '#1f5fa8', '#ffffff');
+    this.shops({ grp, box, cyl, ball, panel, pave, mat, bins, tanPave });
 
     for (const k in bins) { const m = new THREE.Mesh(mergeGeometries(bins[k]), M[k]); m.castShadow = true; m.receiveShadow = true; grp.add(m); for (const g of bins[k]) g.dispose(); }
     this.scene.add(grp);
+  }
+  // ---- 31A Street west of 20C Street, from photographs: the Eat & Drink block with its terrace, the Co-op and Al Kabayel Centre
+  shops({ grp, box, cyl, ball, panel, pave, tanPave }) {
+    const greyPave = brick('#a9a7a2', '#9c9a95', '#7f7d79');
+    const front = (w, h, pxm, draw) => new THREE.MeshLambertMaterial({ map: tex(Math.round(w * pxm), Math.round(h * pxm), (g, W, H) => draw(g, m => m * pxm, m => H - m * pxm, W, H)) });
+    const roofText = (text, col, x, y, z, w, h) => { const t = tex(1024, 96, (g) => { g.clearRect(0, 0, 1024, 96); g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; let fs = 82; g.font = `900 ${fs}px "Segoe UI", Roboto, Arial, sans-serif`; while (g.measureText(text).width > 1000 && fs > 20) { fs -= 2; g.font = `900 ${fs}px "Segoe UI", Roboto, Arial, sans-serif`; } g.fillText(text, 512, 50); }); panel(new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.35, side: DS, toneMapped: false }), x, y, 0, w, h, z); for (const e of [-0.45, 0, 0.45]) box('steel', 0xa9adb0, x + e * w - 0.05, x + e * w + 0.05, y + 0.05, y + 0.9, z - 0.1, z + h * 0.6); };
+    const txt = (g, t, x, y, px, col, font = '800') => { g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `${font} ${px}px "Segoe UI", Roboto, Arial, sans-serif`; g.fillText(t, x, y); };
+
+    // ======== the Eat & Drink block (x 735..772, wall at y -24): white panels, red pillars, red and green name boards
+    box('white', 0xeeece6, 735, 777, -24, 4, 0, 8); box('white', 0, 735, 740, -24.6, -19, 0, 10.6); box('white', 0, 734.6, 740.4, -25, -18.6, 10.6, 11.5);
+    panel(front(37, 8, 36, (g, X, Y, W, H) => {
+      g.fillStyle = '#e9e7e1'; g.fillRect(0, 0, W, H); g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 2; for (let m = 0; m < 37; m += 2.4) { g.beginPath(); g.moveTo(X(m), 0); g.lineTo(X(m), Y(4.4)); g.stroke(); }
+      g.fillStyle = '#7f95a6'; g.fillRect(X(6), Y(6.7), X(31), Y(4.9) - Y(6.7)); g.fillStyle = '#e9e7e1'; for (let m = 6; m < 37; m += 2.2) g.fillRect(X(m), Y(6.7), 5, Y(4.9) - Y(6.7));
+      g.fillStyle = '#20252b'; g.fillRect(X(5), Y(3.1), X(32), Y(0) - Y(3.1)); g.fillStyle = '#39424b'; for (let m = 5.3; m < 37; m += 2.6) g.fillRect(X(m), Y(2.9), X(2.3), Y(0.2) - Y(2.9)); g.fillStyle = 'rgba(255,220,150,.25)'; g.fillRect(X(5), Y(2.9), X(13), Y(0.9) - Y(2.9));
+      g.fillStyle = '#e2433f'; for (const m of [6.2, 12.6, 19.6]) g.fillRect(X(m), 0, X(0.95), Y(4.4)); g.fillRect(X(5), Y(4.6), X(32), Y(4.4) - Y(4.6));
+      // name boards: red in English, green in Arabic, then the pharmacy and the supermarket
+      g.fillStyle = '#d8403c'; g.fillRect(X(5), Y(4.4), X(8.6), Y(3.1) - Y(4.4)); txt(g, 'Eat & Drink', X(9.2), Y(3.86), 34, '#fff3d6', 'italic 800'); txt(g, 'RESTAURANT', X(9.2), Y(3.32), 12, '#fff3d6');
+      g.fillStyle = '#1f7a4a'; g.fillRect(X(14.4), Y(4.4), X(10.2), Y(3.1) - Y(4.4)); txt(g, 'مطعم كل واشرب', X(19.6), Y(3.75), 36, '#f3e6c0');
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(X(14), Y(3.75), 24, 0, 7); g.fill(); g.strokeStyle = '#d8403c'; g.lineWidth = 5; g.beginPath(); g.arc(X(14), Y(3.75), 21, 0, 7); g.stroke(); txt(g, 'E&D', X(14), Y(3.75), 15, '#d8403c');
+      g.fillStyle = '#ffffff'; g.fillRect(X(24.8), Y(4.4), X(5.4), Y(3.1) - Y(4.4)); txt(g, 'Balsam Pharmacy', X(27.5), Y(3.95), 18, '#0a8f6a'); txt(g, 'صيدلية بلسم', X(27.5), Y(3.45), 18, '#c62828');
+      g.fillStyle = '#0f6b3a'; g.fillRect(X(30.4), Y(4.4), X(6.6), Y(3.1) - Y(4.4)); txt(g, 'Choithrams', X(33.7), Y(3.75), 26, '#ffffff');
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(X(22.6), Y(6.5), 30, 0, 7); g.fill(); g.strokeStyle = '#c9a44a'; g.lineWidth = 5; g.beginPath(); g.arc(X(22.6), Y(6.5), 28, 0, 7); g.stroke(); txt(g, 'E&D', X(22.6), Y(6.5), 20, '#d8403c');
+    }), 753.5, -24.06, 0, 37, 8, 0);
+    // the stair tower at the west end with its pierced screen and the small red sign
+    panel(new THREE.MeshLambertMaterial({ map: tex(128, 128, (g) => { g.fillStyle = '#e9e7e1'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#8a8f93'; for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) g.fillRect(14 + x * 18, 12 + y * 18, 9, 9); }) }), 737.5, -24.66, 0, 2.6, 2.6, 7.2);
+    panel(new THREE.MeshBasicMaterial({ map: plate(['Eat & Drink'], '#d8403c', '#fff3d6', 256, 128, '#ffffff'), toneMapped: false }), 737.5, -24.66, 0, 3.0, 1.5, 2.9);
+    panel(new THREE.MeshBasicMaterial({ map: plate(['Century Express'], '#101010', '#ffcf33', 512, 128), toneMapped: false }), 775.1, -19.4, 0.72, 6.5, 1.2, 3.2);
+    // red awnings over the terrace
+    for (const [x0, x1] of [[740.6, 746.8], [747.2, 753.4]]) { const a = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, 3.0), new THREE.MeshLambertMaterial({ color: 0xd8473f, side: DS })); a.position.set((x0 + x1) / 2, ground(745, -25.5) + 2.72, 25.45); a.rotation.x = -Math.PI / 2 + 0.27; grp.add(a); box('awn', 0xc23a33, x0, x1, -26.95, -26.85, 2.15, 2.4); for (const px of [x0 + 0.1, x1 - 0.1]) cyl('rail', 0x1c1c1c, px, -26.8, 0.04, 0, 2.3); }
+    // the terrace: a black railing round it, tables and red chairs, two food counters
+    pave(tanPave, 740.2, 754, -24.1, -29.4, 2.0, 0.06);
+    for (const z of [0.5, 0.95]) { box('rail', 0x1c1c1c, 740.2, 754, -29.4, -29.34, z, z + 0.05); box('rail', 0, 754, 754.06, -29.4, -26.2, z, z + 0.05); } for (let x = 740.2; x <= 754; x += 1.15) cyl('rail', 0, x, -29.37, 0.03, 0, 1.0);
+    for (const [tx, ty] of [[742, -26], [745.2, -27.6], [748.6, -26.1], [751.8, -27.7], [744, -28.6], [750, -28.6]]) {
+      cyl('ttop', 0xf3f1ea, tx, ty, 0.46, 0.7, 0.75); cyl('rail', 0, tx, ty, 0.04, 0, 0.7);
+      for (const [ox, oy] of [[0.75, 0], [-0.75, 0], [0, 0.75]]) { box('chair', 0xc93a32, tx + ox - 0.2, tx + ox + 0.2, ty + oy - 0.2, ty + oy + 0.2, 0.38, 0.45); box('chair', 0, tx + ox * 1.25 - 0.2, tx + ox * 1.25 + 0.2, ty + oy * 1.25 - 0.03, ty + oy * 1.25 + 0.03, 0.45, 0.85); for (const [lx, ly] of [[-0.16, -0.16], [0.16, 0.16]]) cyl('rail', 0, tx + ox + lx, ty + oy + ly, 0.02, 0, 0.38); }
+    }
+    box('counter', 0xb8bcc0, 755, 757.4, -25.9, -24.9, 0, 0.95); box('crate', 0x2a66c9, 755.3, 756.1, -25.7, -25.2, 0.95, 1.2); box('redbox', 0xc93a32, 735.4, 736.6, -25.6, -24.8, 0, 1.5);
+    pave(greyPave, 754.5, 778, -24.2, -33.5, 2.0, 0.045); for (let x = 757.3; x <= 776; x += 2.7) box('line', 0xe8e8e4, x - 0.06, x + 0.06, -32.2, -27, 0.05, 0.065);
+    BLOCKS.push({ x: 756, y: -10, fx: 1, fy: 0, hl: 21, hw: 14, top: 60, R: 26 });
+
+    // ======== Emirates Co-operative Society (x 652..725, wall at y -26): white, with a row of tall pointed arches
+    box('white', 0, 652.5, 725, -26, 5, 0, 8.2);
+    const arches = (g, X, Y, n, w, hgt, pitch, x0, inside) => { for (let i = 0; i < n; i++) { const cx = x0 + i * pitch; g.fillStyle = inside; g.beginPath(); g.moveTo(X(cx - w / 2), Y(0)); g.quadraticCurveTo(X(cx - w / 2 + 0.3), Y(hgt * 0.9), X(cx), Y(hgt)); g.quadraticCurveTo(X(cx + w / 2 - 0.3), Y(hgt * 0.9), X(cx + w / 2), Y(0)); g.fill(); } };
+    panel(front(72.5, 8.2, 20, (g, X, Y, W, H) => {
+      g.fillStyle = '#f3f2ee'; g.fillRect(0, 0, W, H); arches(g, X, Y, 6, 8.6, 5.6, 12, 6.2, '#cfd2d2');
+      for (let i = 0; i < 6; i++) { const cx = 6.2 + i * 12; g.fillStyle = '#e9e8e3'; g.fillRect(X(cx - 2.6), Y(3.0), X(5.2), Y(0) - Y(3.0)); g.fillStyle = '#39424b'; g.fillRect(X(cx - 2.2), Y(2.5), X(1.9), Y(0.1) - Y(2.5)); g.fillRect(X(cx + 0.3), Y(2.5), X(1.9), Y(0.1) - Y(2.5)); g.fillStyle = (i % 2 ? '#c62828' : '#2a7a4a'); g.fillRect(X(cx - 2.2), Y(3.0), X(4.4), Y(2.6) - Y(3.0)); }
+      g.fillStyle = '#6f8796'; for (let m = 1.5; m < 72; m += 3) g.fillRect(X(m), Y(7.0), X(0.9), Y(6.5) - Y(7.0));
+      g.fillStyle = '#e8e6e0'; for (let i = 0; i < 6; i++) { g.fillRect(X(11.4 + i * 12), Y(7.6), X(1.6), Y(6.0) - Y(7.6)); }
+      g.fillStyle = '#c62828'; g.fillRect(X(35.2), Y(5.2), X(1.9), Y(3.4) - Y(5.2)); txt(g, 'PRISM', X(36.15), Y(4.9), 9, '#fff'); txt(g, 'OPTICAL', X(36.15), Y(3.8), 8, '#fff'); g.fillStyle = '#fff'; g.beginPath(); g.arc(X(35.85), Y(4.35), 5, 0, 7); g.arc(X(36.5), Y(4.35), 5, 0, 7); g.fill();
+      g.fillStyle = '#f7f5ee'; g.fillRect(X(35.1), Y(3.2), X(2.1), Y(2.4) - Y(3.2)); txt(g, 'FLOWERS', X(36.15), Y(2.8), 9, '#3d6b3a');
+    }), 688.75, -26.06, 0, 72.5, 8.2, 0);
+    roofText('EMIRATES CO-OPERATIVE SOCIETY', '#2f7d4f', 672, -25.2, 8.5, 34, 2.1); roofText('جمعية الإمارات التعاونية', '#2f7d4f', 707, -25.2, 8.5, 28, 2.6);
+    pave(greyPave, 652.5, 725, -26.2, -37.2, 2.0, 0.045); for (let x = 656; x <= 722; x += 2.7) box('line', 0xe8e8e4, x - 0.06, x + 0.06, -34.2, -29, 0.05, 0.065);
+    box('paym', 0x2a52b8, 693.6, 694.1, -27.2, -26.8, 0, 1.7);
+    BLOCKS.push({ x: 688.75, y: -10.5, fx: 1, fy: 0, hl: 36.25, hw: 15.5, top: 60, R: 40 });
+
+    // ======== Al Kabayel Centre (x 557..630, wall at y -30): brown boarded front, white arches, black banners, red roof letters
+    box('white', 0, 557.5, 630, -29.5, 0, 0, 8.4);
+    panel(front(72.5, 8.4, 20, (g, X, Y, W, H) => {
+      g.fillStyle = '#a66b4c'; g.fillRect(0, 0, W, H); g.strokeStyle = 'rgba(60,30,15,.5)'; g.lineWidth = 2; for (let m = 0.3; m < 6.6; m += 0.42) { g.beginPath(); g.moveTo(0, Y(m)); g.lineTo(W, Y(m)); g.stroke(); }
+      g.fillStyle = '#f4f2ec'; g.fillRect(0, 0, W, Y(6.6)); arches(g, X, Y, 6, 7.4, 5.9, 12, 6.2, '#f4f2ec');
+      for (let i = 0; i < 6; i++) { const cx = 6.2 + i * 12; g.fillStyle = '#e3e0d8'; g.fillRect(X(cx - 2.2), Y(3.3), X(4.4), Y(0) - Y(3.3)); g.fillStyle = '#c93a32'; g.fillRect(X(cx - 0.5), Y(2.6), X(1.0), Y(0.6) - Y(2.6)); }
+      for (let i = 0; i < 5; i++) { const cx = 12.2 + i * 12; for (const [ox, c] of [[-1.3, '#111111'], [0, '#2b2b2b'], [1.3, '#111111']]) { g.fillStyle = c; g.fillRect(X(cx + ox - 0.5), Y(5.6), X(1.0), Y(0.9) - Y(5.6)); } g.fillStyle = '#d8232c'; g.beginPath(); g.arc(X(cx + 1.3), Y(4.9), 9, 0, 7); g.fill(); txt(g, '24', X(cx + 1.3), Y(4.88), 10, '#fff'); g.beginPath(); g.fillStyle = '#d8232c'; g.arc(X(cx - 1.3), Y(4.9), 9, 0, 7); g.fill(); txt(g, '24', X(cx - 1.3), Y(4.88), 10, '#fff'); txt(g, '29', X(cx), Y(2.6), 13, '#fff'); }
+    }), 593.75, -29.56, 0, 72.5, 8.4, 0);
+    roofText('AL KABAYEL', '#d8232c', 578, -28.6, 8.7, 22, 2.6); roofText('القبايل', '#d8232c', 610, -28.6, 8.7, 18, 4.2);
+    pave(greyPave, 557.5, 630, -29.7, -38.5, 2.0, 0.045); for (let x = 561; x <= 627; x += 2.7) box('line', 0xe8e8e4, x - 0.06, x + 0.06, -37.6, -32.4, 0.05, 0.065);
+    BLOCKS.push({ x: 593.75, y: -14.75, fx: 1, fy: 0, hl: 36.25, hw: 14.75, top: 60, R: 40 });
   }
   // cars parked the way they are in the photographs (you can take any of them)
   park() {
     const g = this.g; this.cars = [];
     const L = [['landcruiser', 1178, -166.6, Math.PI / 2], ['patrol', 1150, -166.7, Math.PI / 2], ['lexus', 1160.5, -154.3, 0], ['jeep', 1090.6, -155.5, -2.2], ['sentra', 1093.1, -118, 0], ['yaris', 1093.1, -110, 0], ['tiida', 1091.6, -58, 0.05],
-      ['lexus', 1046, y31(1046) + 6.6, 0], ['patrol', 1051.2, y31(1051) + 6.6, 0], ['sentra', 962, y31(962) + 6.6, 0], ['landcruiser', 967.2, y31(967) + 6.6, 0], ['yaris', 1020, y31(1020) - 6.6, Math.PI], ['tiida', 895, y31(895) - 6.6, Math.PI], ['sorento', 760, y31(760) + 6.6, 0], ['patrol', 752.2, y31(752) + 6.6, 0]];
+      ['lexus', 1046, y31(1046) + 6.6, 0], ['patrol', 1051.2, y31(1051) + 6.6, 0], ['sentra', 962, y31(962) + 6.6, 0], ['landcruiser', 967.2, y31(967) + 6.6, 0], ['yaris', 1020, y31(1020) - 6.6, Math.PI], ['tiida', 895, y31(895) - 6.6, Math.PI], ['sorento', 760, -29.6, 0], ['yaris', 765.4, -29.5, 0], ['patrol', 676, -31.6, 0], ['sentra', 684, -31.5, 0], ['tiida', 700.2, -31.4, 0], ['landcruiser', 600, -35, 0], ['lexus', 611, -34.9, 0]];
     for (const [k, x, y, h] of L) {
       plateOpt.dubaiOnly = true; let mesh; try { mesh = makeCar(k); } finally { plateOpt.dubaiOnly = false; }
       const gy = ground(x, y), car = { mesh, parked: true, x, y, h, gy, v: 0, s: 0, dir: 1, piece: { tile: null }, mission: true, hp: 200, x0: x, y0: y };
@@ -144,8 +210,8 @@ export class Garhoud {
   update(dt, px, py) {
     if ((this.t -= dt) > 0) return; this.t = 1;
     const d = Math.hypot(C.x - px, C.y - py);
-    if (d < 620 && !this.grp) this.build();
-    if (d < 480 && !this.cars && this.g.traffic && this.g.traffic.pieces && this.g.traffic.pieces.length) this.park();
-    if (d > 800 && this.cars) this.unpark();
+    if (d < 760 && !this.grp) this.build();
+    if (d < 560 && !this.cars && this.g.traffic && this.g.traffic.pieces && this.g.traffic.pieces.length) this.park();
+    if (d > 900 && this.cars) this.unpark();
   }
 }

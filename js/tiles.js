@@ -8,6 +8,8 @@ import { TER, ground, gl } from './terrain.js?v=11112231';
 export const STYLE = { dubai: false };
 // where the buildings being built sit in the world (tile origin), and the satellite's colour of the ground there
 export const BLD_O = { x: 0, y: 0 };
+// buildings replaced by a hand-built landmark: [x, y, radius, taller than (m)]
+export const HIDE_BLD = [];
 export const SAT = { px: new Map(), rg: 8000, n: 400, on: false };
 export async function loadSatColours(world) {      // data/s2/<region>.jpg, kept small (20 m a pixel) for roof and wall tints
   if (!world.s2) return; const s = world.s2, jobs = [];
@@ -1317,6 +1319,7 @@ export class TileManager {
     if (prev) { if (!prev.upgrading || lite) return true; t = { ix: job.ix, iy: job.iy, group: null }; }      // a lighter tile becoming a full one
     const ox = job.ix * this.TS, oy = job.iy * this.TS;
     const layers = parseTile(job.buf, ox, oy);
+    if (HIDE_BLD.length && layers[L.BLD]) layers[L.BLD] = layers[L.BLD].filter(f => { const r = f.rings[0]; let cx = 0, cy = 0; const n = r.length / 2; for (let i = 0; i < n; i++) { cx += r[i * 2]; cy += r[i * 2 + 1]; } cx = cx / n + ox; cy = cy / n + oy; return !HIDE_BLD.some(h => Math.hypot(h[0] - cx, h[1] - cy) < h[2] && f.a / 10 > h[3]); });
     TER.ox = ox; TER.oy = oy;
     const g = new THREE.Group(); g.position.set(ox, 0, -oy); g.name = 'tile ' + job.k;
     // between steps: the tile may have been unloaded meanwhile (then drop the half-built one), and other code may have moved TER

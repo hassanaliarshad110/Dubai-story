@@ -148,6 +148,7 @@ function addTowerTops(g, world) {
     const ring = s.r; if (!ring || ring.length < 3) continue;
     const base = Math.min(...ring.map(p => ground(p[0], p[1]))) - 0.1, top = base + s.h;
     let cx = 0, cy = 0; for (const p of ring) { cx += p[0]; cy += p[1]; } cx /= ring.length; cy /= ring.length;
+    if (world.hideBld && world.hideBld.some(h => Math.hypot(h[0] - cx, h[1] - cy) < h[2] && s.h > h[3])) continue;
     if (s.h >= 110) BEACONS.push(new THREE.Vector3(cx, top + 2.5, -cy));
     const c = !world.b3d && s.n && CROWNS[s.n]; if (!c) continue;       // the 3D models have the real crowns
     const pos = [], add = (a, ya, b, yb, d, yd) => pos.push(a[0], ya, -a[1], b[0], yb, -b[1], d[0], yd, -d[1]);

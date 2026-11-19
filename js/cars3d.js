@@ -2,6 +2,7 @@
 // the city bus and the CTrain car. Each is fitted to its real length, width and height and faces +z
 // like the other vehicles. Until a model has loaded, the simpler vehicles stand in.
 import * as THREE from 'three';
+import { buildBMW6 } from './bmw6.js?v=11190630';
 import { loader, warm } from './gltf.js?v=11190630';
 
 
@@ -24,6 +25,7 @@ export const CAR3D = {
   jeep: { L: 4.75, W: 1.88, H: 1.84, base: 'dxb_jeep', name: 'Jeep Wrangler' },
   sentra: { L: 4.62, W: 1.76, H: 1.5, base: 'dxb_sentra', name: 'Nissan Sentra' },
   lexus: { L: 4.58, W: 1.8, H: 1.43, base: 'dxb_lexus', name: 'Lexus IS' },
+  bmw6: { L: 4.89, W: 1.89, H: 1.37, built: true, name: 'BMW 650i' },                              // red coupé, built in code (bmw6.js)
   dxb_lambo: { L: 4.8, W: 2.03, H: 1.14, name: 'Dubai Police Lamborghini' },
   dxb_ferrari: { L: 4.92, W: 1.95, H: 1.36, name: 'Dubai Police Ferrari' },                    // black
 };
@@ -31,6 +33,7 @@ const READY = {};
 const FLIP = { dxb_lexus: 1 };      // models that come facing the other way
 
 async function load(kind) {
+  if (CAR3D[kind].built) { READY[kind] = buildBMW6(); return; }
   const gl = await loader.loadAsync(`data/veh/${CAR3D[kind].base || kind}.glb`); let mesh = null;
   gl.scene.traverse(o => { if (o.isMesh && !mesh) mesh = o; });
   gl.scene.updateMatrixWorld(true);
@@ -47,7 +50,7 @@ async function load(kind) {
   READY[kind] = { geo, mat: mt, wheels: WHEEL_R[kind] ? axleWheels(geo, WHEEL_R[kind]) : null };
 }
 // tyre radius by vehicle (m); the CTrain's wheels are hidden under its skirts
-const WHEEL_R = { pickup: 0.42, offroad: 0.43, police: 0.38, peace: 0.39, bus: 0.5, sorento: 0.37, rondo: 0.33, veloster: 0.32 };
+const WHEEL_R = { bmw6: 0.345, pickup: 0.42, offroad: 0.43, police: 0.38, peace: 0.39, bus: 0.5, sorento: 0.37, rondo: 0.33, veloster: 0.32 };
 // the wheels: cutting the model's own tyres out of the mesh left holes and black scraps when they turned, so each car
 // gets clean wheels of its own (a tyre and an alloy rim) placed over the model's tyres at its axles, and those spin
 let WHEEL_TEX = null;
@@ -141,7 +144,7 @@ export function makeCar3D(kind) {
     g.add(pv);
     wheels.push(pv); if (w.front) front.push(pv);
   }
-  g.userData = { name: R.name, L: R.L, W: R.W, kind: kind === 'pickup' ? 'truck' : kind === 'offroad' || kind === 'patrol' || kind === 'landcruiser' || kind === 'jeep' ? 'suv' : kind === 'yaris' || kind === 'tiida' || kind === 'sentra' || kind === 'lexus' ? 'car' : kind.startsWith('dxb_') ? 'police' : kind, model: kind, wheels, front, wheelR: WHEEL_R[kind] || 0.4 };
+  g.userData = { name: R.name, L: R.L, W: R.W, kind: kind === 'pickup' ? 'truck' : kind === 'offroad' || kind === 'patrol' || kind === 'landcruiser' || kind === 'jeep' ? 'suv' : kind === 'yaris' || kind === 'tiida' || kind === 'sentra' || kind === 'lexus' || kind === 'bmw6' ? 'car' : kind.startsWith('dxb_') ? 'police' : kind, model: kind, wheels, front, wheelR: WHEEL_R[kind] || 0.4 };
   if (kind === 'police' || kind === 'peace') {          // flashing roof lights for the chase
     const a = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.22), new THREE.MeshBasicMaterial({ color: kind === 'peace' ? 0xffa020 : 0xff2020 }));
     const b = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.22), new THREE.MeshBasicMaterial({ color: 0x2a5cff }));

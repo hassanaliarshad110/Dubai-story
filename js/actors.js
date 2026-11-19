@@ -78,12 +78,12 @@ export function makeCar(kind = 'car', colour) {
   const dxb = !!(window.game && window.game.dubai);
   if (dxb && kind === 'police') { const p = dubaiPolice(); if (p) return p; }
   if (dxb && (kind === 'car' || kind === 'suv' || kind === 'family' || CAR3D_DXB.includes(kind))) {
-    const r = Math.random(), k = CAR3D_DXB.includes(kind) ? kind : kind === 'suv' ? (r < 0.5 ? 'patrol' : 'landcruiser') : r < 0.18 ? 'patrol' : r < 0.36 ? 'landcruiser' : r < 0.48 ? 'yaris' : r < 0.62 ? 'tiida' : r < 0.72 ? 'sentra' : r < 0.8 ? 'lexus' : r < 0.86 ? 'jeep' : r < 0.93 ? 'sorento' : null;
+    const r = Math.random(), k = CAR3D_DXB.includes(kind) ? kind : kind === 'suv' ? (r < 0.5 ? 'patrol' : 'landcruiser') : r < 0.18 ? 'patrol' : r < 0.36 ? 'landcruiser' : r < 0.48 ? 'yaris' : r < 0.62 ? 'tiida' : r < 0.72 ? 'sentra' : r < 0.8 ? 'lexus' : r < 0.86 ? 'jeep' : r < 0.93 ? 'sorento' : r < 0.955 ? 'bmw6' : null;
     const m = k && makeCar3D(k); if (m) return addPlates(m);
   }
   const g = makeCar0(kind, colour); return dxb ? addPlates(g) : g;
 }
-const CAR3D_DXB = ['patrol', 'landcruiser', 'yaris', 'tiida', 'jeep', 'sentra', 'lexus'];
+const CAR3D_DXB = ['patrol', 'landcruiser', 'yaris', 'tiida', 'jeep', 'sentra', 'lexus', 'bmw6'];
 function makeCar0(kind = 'car', colour) {
   // the detailed models: police SUVs (now and then a community peace officer), pickups and off-roaders
   { const r = Math.random(), k = kind === 'police' ? (r < 0.3 ? 'peace' : 'police') : kind === 'peace' ? 'peace' : kind === 'truck' ? 'pickup' : kind === 'suv' ? (r < 0.6 ? 'offroad' : 'pickup') : kind === 'car' ? (r < 0.12 ? 'pickup' : r < 0.2 ? 'offroad' : r < 0.32 ? 'sorento' : r < 0.42 ? 'rondo' : r < 0.52 ? 'veloster' : null) : null;

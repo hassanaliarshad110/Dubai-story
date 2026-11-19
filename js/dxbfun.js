@@ -237,6 +237,16 @@ export class DubaiFun {
         mesh.position.set(x, gy + TYRE_Y, -y); mesh.rotation.y = rotY(0); this.scene.add(mesh); g.traffic.cars.push(car);
       }
     }
+    // the red BMW 650i is parked at both homes: outside 27C Street and in front of AB Residence 2
+    for (const b of (this.bmws ||= [{ x: 1131.8, y: -154.4, h: 0 }, { x: 4917.5, y: -10418.4, h: 0.3658 }])) {
+      const d = Math.hypot(b.x - p.x, b.y - p.y);
+      if (b.car && (b.car.dead || d > 520)) { if (d > 520 && !b.car.dead && Math.hypot(b.car.x - b.x, b.car.y - b.y) < 3 && p.car !== b.car) { this.scene.remove(b.car.mesh); const i = g.traffic.cars.indexOf(b.car); if (i >= 0) g.traffic.cars.splice(i, 1); } if (d > 520) b.car = null; }
+      if (!b.car && d < 260 && g.traffic && g.traffic.pieces && g.traffic.pieces.length) {
+        plateOpt.dubaiOnly = true; let mesh; try { mesh = makeCar('bmw6'); } finally { plateOpt.dubaiOnly = false; }
+        const gy = ground(b.x, b.y), car = b.car = { mesh, parked: true, x: b.x, y: b.y, h: b.h, gy, v: 0, s: 0, dir: 1, piece: { tile: null }, mission: true, hp: 200 };
+        mesh.position.set(b.x, gy + TYRE_Y, -b.y); mesh.rotation.y = rotY(b.h); this.scene.add(mesh); g.traffic.cars.push(car);
+      }
+    }
     // your own car is always waiting outside your home (Farah: the black Tiida at AB Residence 2)
     const hm = HOMES[g.story];
     if (hm && hm.car && !this.stock && p.mode === 'foot' && (!this.ownCar || this.ownCar.dead) && g.traffic && Math.hypot(hm.x - p.x, hm.y - p.y) < 220) this.stock = { x: hm.x + 3.4, y: hm.y + 1.5, h: hm.h || 0, kind: hm.car, tell: true };
